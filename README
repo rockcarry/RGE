@@ -1,0 +1,61 @@
+==========
+ CONTENTS
+==========
+1. About
+2. License
+3. How to build
+4. Features
+5. Screen bmp
+6. Supported pixel formats
+7. Performance
+
+=======
+ About
+=======
+RGE is a cross-platform draw2d graphics lib, which support dos, windows and linux platforms.
+Using this lib, you can create bitmap objects, and render geometrys on them.
+
+=========
+ License
+=========
+RGE is freeware under GNU GPL license. 
+
+==============
+ How to build
+==============
+Now RGE is only work on mingw32 windows environment.
+
+You can build it on Windows(mingw32 & msys-git) or Linux(mingw32 & git):
+
+cd RGE/src
+make CC=mingw32-gcc
+you shold replace "mingw32-gcc" witch you own mingw32-gcc compiler.
+
+==========
+ Features
+==========
+- simple designed, accord with KISS
+- screen bmp object stand for physics screen, isolating platform & hardware difference
+- cross-platform supports
+
+============
+ Screen bmp
+============
+A screen bmp is a implement of BMP object , which stand for a physics screen, such as VGA/SVGA screen in dos, frame buffer in linux, or window & directdraw screen in windows. Any operations on screen bmp will be shown on physics screen. It means you can immediately see what you are drawing.
+
+=========================
+ Supported pixel formats
+=========================
+Each bmp object can support RGB 8bit 256 color, 16bit RGB565, 24bit RGB888, 32bit RGB888.
+
+=============
+ Performance
+=============
+RGE is completely implement by software, with out any opengl or direct3d hardware acceleration.
+So it is not fast, hehe.
+
+
+rockcarry
+email: rockcarry@163.com
+       ck@gps-e.com
+

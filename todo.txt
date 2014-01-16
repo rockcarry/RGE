@@ -1,0 +1,8 @@
+polybezier
+floodfill
+pack fio drv
+line width style
+反走样
+stretchblt
+rotateblt
+渐变色填充
