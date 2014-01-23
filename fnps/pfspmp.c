@@ -4,9 +4,10 @@
 /* ++ 256-colors palette map functions ++ */
 static void scanlinepalmapalpha(BMP *pb, int y, int x0, int x1, DWORD c)
 {
-    BYTE *map   = (BYTE*)c;
-    BYTE *pbyte = pb->pdata + y * pb->stride + x0;
-    int   i;
+    DRAWCONTEXT *ctxt  = (DRAWCONTEXT*)c;
+    BYTE        *map   = ctxt->palmap;
+    BYTE        *pbyte = pb->pdata + y * pb->stride + x0;
+    int          i;
 
     if (!map)
     {

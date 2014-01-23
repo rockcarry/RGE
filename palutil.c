@@ -53,12 +53,11 @@ void alphacolormap(BYTE *map, BYTE *pal, DWORD color)
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
 {
     void *context;
-    BMP mybmp = {0};
+    BMP   mybmp = {0};
     BYTE  map1[256];
     BYTE  map2[256];
     int   pg1[] = { 123, 128, 323, 50, 483, 88, 540, 235,
                     460, 435, 260, 465, 150, 265 };
-    int   pg2[] = { 100, 100, 520, 100, 520, 420, 100, 420 };
 
     RGE_WIN_INIT(hInst);
     SCREEN.cdepth = 8;
@@ -76,9 +75,8 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     polygon(context, pg1, 7);
 
     setfillstyle(context, FILL_STYLE_PALMAP_SOLID);
-    setfillcolor(context, ARGB(128, 0, 0, 255));
     setpalmaptab(context, map2);
-    polygon(context, pg2, 4);
+    rectangle(context, 100, 100, 520, 420);
     paint_end(context);
 
     RGE_MSG_LOOP();
