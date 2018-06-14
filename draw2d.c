@@ -44,9 +44,6 @@ void* draw2d_init(BMP *pb)
     pc->pixel                = pc->pixelsolid;
     pc->scanline             = pc->scanlinebarsolid;
 
-    // allocate ppbuf
-    pc->ppbuf = malloc(MAX_PPBUF_SIZE * sizeof(int));
-
     return pc;
 }
 
@@ -56,9 +53,6 @@ void draw2d_free(void *ctxt)
 
     // invalid ctxt
     if (!ctxt) return;
-
-    // free ppbuf
-    free(pc->ppbuf);
 
     // release context
     if (pc) free(pc);
@@ -519,28 +513,27 @@ void ellipse(void *ctxt, int xo, int yo, int a, int b)
 
 void arc(void *ctxt, int xo, int yo, int a, int b, int start, int end)
 {
-    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
-    float        pd = 2.0f;
-    float        fstep;
+    DRAWCONTEXT *pc    = (DRAWCONTEXT*)ctxt;
+    float        pd    = 1.0f;
+    float        fstep = (float)pd / (a > b ? a : b);
     float        ft;
+    int          ppsize= (int)(M_PI / 180 * (end - start) / fstep) + 2;
+    int         *ppbuf = malloc(2 * ppsize * sizeof(int));
+    int          ppcur = 0;
 
-    // check ppbuf valid
-    if (!pc->ppbuf) return;
-
-    pc->ppcur = 0;
+    if (!ppbuf) return;
     if (pc->drawflags & DF_ARC_CENTER_POINT) {
-        pc->ppbuf[pc->ppcur++] = xo;
-        pc->ppbuf[pc->ppcur++] = yo;
+        ppbuf[ppcur++] = xo;
+        ppbuf[ppcur++] = yo;
     }
 
-    fstep = (float)pd / (a > b ? a : b);
     for (ft = M_PI / 180 * start; ft <= M_PI / 180 * end; ft += fstep) {
-        pc->ppbuf[pc->ppcur++] = (int)(xo + a * cos(ft) + 0.5f);
-        if (pc->ppcur == MAX_PPBUF_SIZE) break;
-        pc->ppbuf[pc->ppcur++] = (int)(yo + b * sin(ft) + 0.5f);
-        if (pc->ppcur == MAX_PPBUF_SIZE) break;
+        ppbuf[ppcur++] = (int)(xo + a * cos(ft) + 0.5f);
+        ppbuf[ppcur++] = (int)(yo + b * sin(ft) + 0.5f);
     }
-    polygon(ctxt, pc->ppbuf, pc->ppcur / 2);
+
+    polygon(ctxt, ppbuf, ppcur / 2);
+    free(ppbuf);
 }
 
 typedef struct tagNODE {
@@ -566,7 +559,7 @@ void polygon(void *ctxt, int *pp, int n)
     int    i;
 
     //++ 绘制非填充多边形 ++//
-    if (!(pc->fillparams.style & FS_NONE)) {
+    if (pc->fillparams.style & FS_NONE) {
         for (i=0; i<n-1; i++) {
             line(ctxt, pp[i*2], pp[i*2+1], pp[(i+1)*2], pp[(i+1)*2+1]);
         }
@@ -713,7 +706,9 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
 
     setfillstyle(context, FS_BAR_ALPHA);
     setfillcolor(context, RGB888(0, 0, 255));
+    setdrawcolor(context, RGB888(255, 255, 255));
     setdrawalpha(context, 180);
+    setdrawflags(context, DF_POLYGON_CLOSED | DF_ARC_CENTER_POINT);
     circle(context, 123, 168, 100);
     rectangle(context, 162, 69, 430, 203);
     roundrect(context, 122, 169, 330, 303, 60, 70);
@@ -721,14 +716,11 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     arc(context, 510, 100, 60, 60, 36, 36 + 300);
 
     setfillstyle(context, FS_NONE);
-    setdrawcolor(context, RGB888(255, 255, 255));
-    setdrawalpha(context, 255);
     line(context, 80, 121, 582, 320);
     circle(context, 123, 168, 100);
     rectangle(context, 162, 69, 430, 203);
     roundrect(context, 122, 169, 330, 303, 60, 70);
     ellipse(context, 480, 320, 40, 30);
-    setdrawflags(context, DF_POLYGON_CLOSED);
     arc(context, 510, 100, 60, 60, 36, 36 + 300);
 
     setfillstyle(context, FS_BMP_COPY);

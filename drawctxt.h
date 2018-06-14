@@ -41,10 +41,6 @@ typedef struct {
 
     PFNPIXEL    pixel;
     PFNSCANLINE scanline;
-
-    #define MAX_PPBUF_SIZE 4096
-    int *ppbuf;
-    int  ppcur;
 } DRAWCONTEXT;
 
 void select_scanline_color(BMP *dstpb, BMP *srcpb, int style, PFNSCANLINE *pfn, DWORD *color);
