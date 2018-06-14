@@ -132,7 +132,7 @@ void settextcolor(void *ctxt, DWORD color)
     // invalid ctxt & brush
     if (!ctxt) return;
 
-    pc->textcolor = COLOR_CONVERT(pc->dstbmp->cdepth, color);
+    pc->textcolor = COLOR_CONVERT(pc->dstbmp->cdepth, color, TRUE);
 }
 
 /* TEXTBOX Ïà¹Øº¯Êý */

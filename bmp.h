@@ -29,7 +29,7 @@ typedef struct {
 #define RGB565(r, g, b)  ( ((r) >> 3 << 11) | ((g) >> 2 << 5) | ((b) >> 3 << 0) )
 #define RGB888(r, g, b)  ( ((r) << 16) | ((g) << 8) | ((b) << 0) )
 #define ARGB(a, r, g, b) ( ((DWORD)(a) << 24) | ((r) << 16) | ((g) << 8) | ((b) << 0) )
-DWORD COLOR_CONVERT(int cdepth, DWORD color);
+DWORD COLOR_CONVERT(int cdepth, DWORD color, BOOL flag);
 
 /* 函数声明 */
 /* 创建与销毁 */

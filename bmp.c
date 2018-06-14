@@ -280,20 +280,29 @@ BOOL savebmp(BMP *pb, char *file, FIO *fio)
     return TRUE;
 }
 
-DWORD COLOR_CONVERT(int cdepth, DWORD color)
+DWORD COLOR_CONVERT(int cdepth, DWORD color, BOOL flag)
 {
-    int r, g, b;
-
-    r = (color >> 16) & 0xff;
-    g = (color >> 8 ) & 0xff;
-    b = (color >> 0 ) & 0xff;
-
-    switch (cdepth) {
-    case 8 : return RGB332(r, g, b);
-    case 16: return RGB565(r, g, b);
-    case 24: return RGB888(r, g, b);
-    case 32: return RGB888(r, g, b);
-    default: return (DWORD)-1;
+    if (flag) { // RGB888 -> RGB332/RGB565/RGB888
+        int r = (color >> 16) & 0xff;
+        int g = (color >> 8 ) & 0xff;
+        int b = (color >> 0 ) & 0xff;
+        switch (cdepth) {
+        case 8 : return RGB332(r, g, b);
+        case 16: return RGB565(r, g, b);
+        default: return color;
+        }
+    } else { // RGB332/RGB565/RGB888 -> RGB888
+        switch (cdepth) {
+        case 8:
+            return ( ((color & 0xE0) << 16) | ((color & 0xE0) << 13) | ((color & 0xC0) << 10)
+                   | ((color & 0x1C) << 11) | ((color & 0x1C) << 8 ) | ((color & 0x18) << 5 )
+                   | ((color & 0x03) << 6 ) | ((color & 0x03) << 4 ) | ((color & 0x03) << 2 ) | ((color & 0x03) << 0) );
+        case 16:
+            return ( ((color & 0x001f) << 3) | ((color & 0x001c) >> 2)
+                   | ((color & 0x07e0) << 5) | ((color & 0x0600) >> 1)
+                   | ((color & 0xf800) << 8) | ((color & 0xe000) << 3) );
+        default: return color;
+        }
     }
 }
 

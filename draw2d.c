@@ -89,7 +89,7 @@ void setdrawalpha(void *ctxt, int alpha)
 void setdrawcolor(void *ctxt, DWORD color)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
-    pc->drawcolor   = COLOR_CONVERT(pc->dstbmp->cdepth, color);
+    pc->drawcolor   = COLOR_CONVERT(pc->dstbmp->cdepth, color, TRUE);
     pc->drawcolor  |= ((DWORD)pc->drawalpha << 24);
 }
 
@@ -130,7 +130,7 @@ void setfillstyle(void *ctxt, DWORD style)
 void setfillcolor(void *ctxt, DWORD color)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
-    pc->fillparams.fillc = COLOR_CONVERT(pc->dstbmp->cdepth, color);
+    pc->fillparams.fillc = COLOR_CONVERT(pc->dstbmp->cdepth, color, TRUE);
     setfillstyle(ctxt, pc->fillparams.style);
 }
 

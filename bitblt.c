@@ -61,7 +61,7 @@ void bitblt(BMP *dstpb, int dstx, int dsty,
 
     params.srcbmp= srcpb;
     params.style = style;
-    params.fillc = COLOR_CONVERT(dstpb->cdepth, color);
+    params.fillc = COLOR_CONVERT(dstpb->cdepth, color, TRUE);
     params.maskc = color;
     params.alpha = alpha;
     params.palmap= palmap;
