@@ -704,9 +704,9 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     BMP   me = {0};
 
     RGE_WIN_INIT(hInst);
-    SCREEN.cdepth = 16;
+    SCREEN.cdepth = 32;
     createbmp(&SCREEN);
-    loadbmp(&me, "res\\me.bmp", NULL);
+    loadbmp(&me, "res\\boy8888.bmp", NULL);
 
     context = draw2d_init(&SCREEN);
     paint_begin(context);
@@ -733,7 +733,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
 
     setfillstyle(context, FS_BMP_COPY);
     setfillbmp(context, &me);
-    circle(context, 320, 240, 80);
+    circle(context, 320, 240, 100);
 
     paint_done(context);
     draw2d_free(context);
