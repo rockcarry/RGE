@@ -1,6 +1,5 @@
-polybezier
+bezier
 floodfill
-pack fio drv
 line width style
 ·´×ßÑù
 stretchblt

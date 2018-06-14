@@ -1,14 +1,47 @@
 #ifndef _TEST_
 
 /* 包含头文件 */
-#include <stdlib.h>
-#include "palette.h"
-#include "palutil.h"
-#include "matchpal.h"
+#include "pal.h"
+#include "palutils.h"
 
-/* 内部类型定义 */
-typedef struct
+/* 函数实现 */
+void palutils_bitmap_palmap(BYTE *palmap, BYTE *dstpal, BYTE *srcpal)
 {
+    int i;
+    for (i=0; i<256; i++) {
+        palmap[i] = PALRGB(dstpal, srcpal[i * 4 + 2], srcpal[i * 4 + 1], srcpal[i * 4 + 0]);
+    }
+}
+
+void palutils_alpha_palmap(BYTE *palmap, BYTE *pal, DWORD color)
+{
+    int fr, fg, fb;
+    int br, bg, bb;
+    int rr, rg, rb;
+    int a, i;
+
+    a  = (color >> 24) & 0xff;
+    fr = (color >> 16) & 0xff;
+    fg = (color >> 8 ) & 0xff;
+    fb = (color >> 0 ) & 0xff;
+
+    for (i=0; i<256; i++) {
+        br = pal[i * 4 + 2];
+        bg = pal[i * 4 + 1];
+        bb = pal[i * 4 + 0];
+
+        /* 进行 alpha 混合运算 */
+        rr = br + a * (fr - br) / 256;
+        rg = bg + a * (fg - bg) / 256;
+        rb = bb + a * (fb - bb) / 256;
+
+        palmap[i] = PALRGB(pal, rr, rg, rb);
+    }
+}
+
+//++ palutils_matchpal
+/* 内部类型定义 */
+typedef struct {
     int  color;
     long freq;
 } COLORITEM;
@@ -23,7 +56,7 @@ static int color_item_cmp(const void *a, const void *b)
 }
 
 /* 函数实现 */
-void matchpal(BMP *pb1, BMP *pb2)
+void palutils_matchpal(BMP *pb1, BMP *pb2)
 {
     COLORITEM colors[512];
     BYTE      newpal[256*4];
@@ -40,19 +73,16 @@ void matchpal(BMP *pb1, BMP *pb2)
     if (!pb1->ppal || !pb2->ppal) return;
 
     /* 初始化颜色统计表 */
-    for (i=0; i<512; i++)
-    {
+    for (i=0; i<512; i++) {
         colors[i].color = i;
         colors[i].freq  = 0;
     }
 
     /* 统计颜色分布 */
-    for (i=0; i<pb1->stride*pb1->height; i++)
-    {
+    for (i=0; i<pb1->stride*pb1->height; i++) {
         colors[*(pb1->pdata + i) + 0  ].freq++;
     }
-    for (i=0; i<pb2->stride*pb2->height; i++)
-    {
+    for (i=0; i<pb2->stride*pb2->height; i++) {
         colors[*(pb2->pdata + i) + 256].freq++;
     }
 
@@ -62,18 +92,14 @@ void matchpal(BMP *pb1, BMP *pb2)
     if (colors[black1].freq > colors[black2 + 256].freq) {
         colors[black1 + 0  ].freq = 0x3fffffff; // 不能使用 0x7fffffff
         colors[black1 + 256].freq = 0;          // 否则在下一步合并重复颜色时会溢出
-    }
-    else
-    {
+    } else {
         colors[black1 + 0  ].freq = 0;
         colors[black2 + 256].freq = 0x3fffffff;
     }
 
     /* 合并重复颜色 */
-    for (i=0; i<256; i++)
-    {
-        for (j=0; j<256; j++)
-        {
+    for (i=0; i<256; i++) {
+        for (j=0; j<256; j++) {
             if (  pb1->ppal[i*4+0] == pb2->ppal[j*4+0]
                && pb1->ppal[i*4+1] == pb2->ppal[j*4+1]
                && pb1->ppal[i*4+2] == pb2->ppal[j*4+2] )
@@ -88,16 +114,12 @@ void matchpal(BMP *pb1, BMP *pb2)
     qsort(colors, 512, sizeof(COLORITEM), color_item_cmp);
 
     /* 生成新调色板并建立匹配的映射 */
-    for (i=0; i<256; i++)
-    {
+    for (i=0; i<256; i++) {
         color = colors[i].color;
-        if (color < 256)
-        {
+        if (color < 256) {
             ppal = pb1->ppal;
             cmap1[color] = i;
-        }
-        else
-        {
+        } else {
             ppal   = pb2->ppal;
             color -= 256;
             cmap2[color] = i;
@@ -109,18 +131,15 @@ void matchpal(BMP *pb1, BMP *pb2)
     }
 
     /* 建立未匹配的映射 */
-    for (i=0; i<256; i++)
-    {
-        if (cmap1[i] == 0)
-        {
+    for (i=0; i<256; i++) {
+        if (cmap1[i] == 0) {
             cmap1[i] = PALRGB(newpal,
                 pb1->ppal[i * 4 + 2],
                 pb1->ppal[i * 4 + 1],
                 pb1->ppal[i * 4 + 0]);
         }
 
-        if (cmap2[i] == 0)
-        {
+        if (cmap2[i] == 0) {
             cmap2[i] = PALRGB(newpal,
                 pb2->ppal[i * 4 + 2],
                 pb2->ppal[i * 4 + 1],
@@ -130,15 +149,13 @@ void matchpal(BMP *pb1, BMP *pb2)
 
     /* 修改图像数据 */
     pixel = pb1->pdata;
-    for (i=0; i<pb1->stride * pb1->height; i++)
-    {
+    for (i=0; i<pb1->stride * pb1->height; i++) {
         *pixel = cmap1[*pixel];
          pixel++;
     }
 
     pixel = pb2->pdata;
-    for (i=0; i<pb2->stride * pb2->height; i++)
-    {
+    for (i=0; i<pb2->stride * pb2->height; i++) {
         *pixel = cmap2[*pixel];
          pixel++;
     }
@@ -147,15 +164,15 @@ void matchpal(BMP *pb1, BMP *pb2)
     setbmppal(pb1, 0, 256, newpal);
     setbmppal(pb2, 0, 256, newpal);
 }
+//-- palutils_matchpal
 
 #else
 /* 在这里书写测试程序 */
 #include "win.h"
-#include "bmpfile.h"
 #include "draw2d.h"
 #include "bitblt.h"
 #include "font.h"
-#include "matchpal.h"
+#include "palutils.h"
 
 static BMP mybmp1 = {0};
 static BMP mybmp2 = {0};
@@ -169,27 +186,26 @@ LRESULT CALLBACK MyWndProc(
 {
     static int counter = 0;
 
-    switch (uMsg)
-    {
+    switch (uMsg) {
     case WM_KEYDOWN:
-        switch (counter)
-        {
+        switch (counter) {
         case 0:
+            putbmp(&SCREEN, 0 , 20, &mybmp1, FS_BAR_SOLID, 0, 0, NULL);
+            putbmp(&SCREEN, 60, 60, &mybmp1, FS_BAR_SOLID, 0, 0, NULL);
             setbmppal(&SCREEN, 0, 256, mybmp1.ppal);
-            putbmppalmap(&SCREEN, 0, 0, &mybmp1, NULL);
+            putbmp(&SCREEN, 0, 20, &mybmp1, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
             break;
 
         case 1:
             setbmppal(&SCREEN, 0, 256, mybmp2.ppal);
-            putbmppalmap(&SCREEN, 150, 0, &mybmp2, NULL);
+            putbmp(&SCREEN, 150, 20, &mybmp2, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
             break;
 
         case 2:
-            matchpal(&mybmp1, &mybmp2);
+            palutils_matchpal(&mybmp1, &mybmp2);
             setbmppal(&SCREEN, 0, 256, mybmp1.ppal);
-
-            putbmppalmap(&SCREEN, 0  , 0, &mybmp1, NULL);
-            putbmppalmap(&SCREEN, 150, 0, &mybmp2, NULL);
+            putbmp(&SCREEN, 0  , 20, &mybmp1, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
+            putbmp(&SCREEN, 150, 20, &mybmp2, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
             break;
 
         case 3:
@@ -208,7 +224,9 @@ LRESULT CALLBACK MyWndProc(
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
 {
     HWND  hwnd;
-    void *context;
+    void *ctxt;
+    BYTE  palmap1[256];
+    BYTE  palmap2[256];
 
     RGE_WIN_INIT(hInst);
     SCREEN.cdepth = 8;
@@ -218,14 +236,22 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     SetWindowLong(hwnd, GWL_WNDPROC, (long)MyWndProc);
 
     loadfont(&FONT16);
-    loadbmp(&mybmp1, "res/me.bmp",  NULL);
-    loadbmp(&mybmp2, "res/boy.bmp", NULL);
+    loadbmp(&mybmp1, "res/me.bmp"    , NULL);
+    loadbmp(&mybmp2, "res/boy332.bmp", NULL);
 
-    context = paint_begin(&SCREEN);
-    settextfont (context, &FONT16);
-    settextcolor(context, RGB(255, 255, 255));
-    printtext(context, "调色板匹配演示");
-    paint_end(context);
+    palutils_bitmap_palmap(palmap1, SCREEN.ppal, mybmp1.ppal);
+    palutils_alpha_palmap (palmap2, SCREEN.ppal, ARGB(128, 0, 0, 255));
+
+    ctxt = draw2d_init(&SCREEN);
+    settextfont (ctxt, &FONT16);
+    settextcolor(ctxt, RGB(0, 255, 0));
+    paint_begin (ctxt);
+    printtext   (ctxt, "调色板映射演示 + 调色板匹配演示");
+    paint_done  (ctxt);
+    draw2d_free (ctxt);
+
+    putbmp(&SCREEN, 0 , 20, &mybmp1, FS_256_PALMAPSRC, 0, 0, palmap1);
+    putbmp(&SCREEN, 60, 60, &mybmp1, FS_256_PALMAPDST, 0, 0, palmap2);
 
     RGE_MSG_LOOP();
     destroybmp(&mybmp1);
@@ -235,8 +261,6 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     return 0;
 }
 #endif
-
-
 
 
 

@@ -1,9 +1,9 @@
-#ifndef _GIF_H_
-#define _GIF_H_
+#ifndef __RGE_GIF_H__
+#define __RGE_GIF_H__
 
 /* 包含头文件 */
 #include "bmp.h"
-#include "fiodrv.h"
+#include "fio.h"
 
 enum {
     GIF_FRAME_TYPE_UNKNOWN, /* unknow */
@@ -39,12 +39,12 @@ typedef struct {
 } GIF_TEXT;
 
 /* decode */
-void* gifdecodeinit (void *fp, FIODRV *drv);
+void* gifdecodeinit (void *fp, FIO *fio);
 void  gifdecodefree (void *ctxt);
 BOOL  gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CTRL *ctrl, GIF_TEXT *text);
 
 /* encode */
-void* gifencodeinit (void *fp, FIODRV *drv, int width, int height, BYTE bkcolor, BYTE *pal, int size);
+void* gifencodeinit (void *fp, FIO *fio, int width, int height, BYTE bkcolor, BYTE *pal, int size);
 void  gifencodefree (void *ctxt);
 BOOL  gifencodeframe(void *ctxt, int type, BMP *pb, int xpos, int ypos, GIF_CTRL *ctrl, GIF_TEXT *text);
 void  gifencodedone (void *ctxt);

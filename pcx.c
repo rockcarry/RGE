@@ -5,8 +5,7 @@
 
 /* 内部类型定义 */
 /* PCX 文件结构定义 */
-typedef struct
-{
+typedef struct {
     BYTE  manufacturer;
     BYTE  version;
     BYTE  encoding;
@@ -49,32 +48,30 @@ BOOL createpcx(PCX *pcx)
 
 void destroypcx(PCX *pcx)
 {
-    if (pcx->pdata)
-    {
+    if (pcx->pdata) {
         free(pcx->pdata);
         pcx->pdata = NULL;
     }
-    if (pcx->ppal)
-    {
+    if (pcx->ppal) {
         free(pcx->ppal);
         pcx->ppal = NULL;
     }
 }
 
-BOOL loadpcx(PCX *pcx, char *file, FIODRV *fdrv)
+BOOL loadpcx(PCX *pcx, char *file, FIO *fio)
 {
     PCXFILE pf;
     void   *fp;
 
-    if (!pcx ) return FALSE;
-    if (!fdrv) fdrv = &DEF_FIO_DRV;
+    if (!pcx) return FALSE;
+    if (!fio) fio = &DEF_FIO;
 
     /* 打开文件 */
-    fp = fdrv->open(file, "rb");
+    fp = fio->open(file, "rb");
     if (!fp) return FALSE;
 
     /* 读入文件头 */
-    fdrv->read(&pf, 128, 1, fp);
+    fio->read(&pf, 128, 1, fp);
 
     /* only support 256 colors pcx */
     if (pf.bitsperpixel != 8) return FALSE;
@@ -84,31 +81,31 @@ BOOL loadpcx(PCX *pcx, char *file, FIODRV *fdrv)
     pcx->height   = pf.ymax - pf.ymin + 1;
     pcx->encoding = pf.encoding;
 
-    fdrv->seek(fp, -256 * 3, SEEK_END);
-    pcx->datasize = fdrv->tell(fp) - 128;
+    fio->seek(fp, -256 * 3, SEEK_END);
+    pcx->datasize = fio->tell(fp) - 128;
     if (!createpcx(pcx)) return FALSE;
 
     /* 读取调色板数据 */
-    fdrv->read(pcx->ppal, 256 * 3, 1, fp);
+    fio->read(pcx->ppal, 256 * 3, 1, fp);
 
     /* 读取图像数据 */
-    fdrv->seek(fp, 128, SEEK_SET);
-    fdrv->read(pcx->pdata, pcx->datasize, 1, fp);
+    fio->seek(fp, 128, SEEK_SET);
+    fio->read(pcx->pdata, pcx->datasize, 1, fp);
 
-    if (fp) fdrv->close(fp);
+    if (fp) fio->close(fp);
     return TRUE;
 }
 
-BOOL savepcx(PCX *pcx, char *file, FIODRV *fdrv)
+BOOL savepcx(PCX *pcx, char *file, FIO *fio)
 {
     PCXFILE pf = {0};
     void   *fp;
 
-    if (!pcx ) return FALSE;
-    if (!fdrv) fdrv = &DEF_FIO_DRV;
+    if (!pcx) return FALSE;
+    if (!fio) fio = &DEF_FIO;
 
     /* 打开文件 */
-    fp = fdrv->open(file, "wb");
+    fp = fio->open(file, "wb");
     if (!fp) return FALSE;
 
     /* 填充 pcx 文件头 */
@@ -125,16 +122,16 @@ BOOL savepcx(PCX *pcx, char *file, FIODRV *fdrv)
     pf.paletteinfo  = 1;
 
     /* 写入文件头 */
-    fdrv->write(&pf, 128, 1, fp);
+    fio->write(&pf, 128, 1, fp);
 
     /* 写入图像数据 */
-    if (pcx->pdata) fdrv->write(pcx->pdata, pcx->datasize, 1, fp);
+    if (pcx->pdata) fio->write(pcx->pdata, pcx->datasize, 1, fp);
 
     /* 写入调色板数据 */
-    if (pcx->ppal ) fdrv->write(pcx->ppal, 256 * 3, 1, fp);
+    if (pcx->ppal ) fio->write(pcx->ppal, 256 * 3, 1, fp);
 
     /* 关闭文件 */
-    if (fp) fdrv->close(fp);
+    if (fp) fio->close(fp);
     return TRUE;
 }
 
@@ -165,17 +162,13 @@ BOOL encodepcx(PCX *pcx, BMP *pb)
     bstride = pb->stride;
     pstride = (pcx->width + 3) / 4 * 4;
 
-    for (i=0; i<pb->height; i++)
-    {
+    for (i=0; i<pb->height; i++) {
         numbyte  = 1;
         lastbyte = *pbdata++;
-        for (j=1; j<pstride; j++)
-        {
+        for (j=1; j<pstride; j++) {
             curbyte = *pbdata++;
-            if (curbyte == lastbyte)
-            {
-                if (numbyte == 0x3f)
-                {
+            if (curbyte == lastbyte) {
+                if (numbyte == 0x3f) {
                     if (ppdata >= ppend) return FALSE;
                     *ppdata++ = numbyte + 0xc0;
                     if (ppdata >= ppend) return FALSE;
@@ -183,11 +176,8 @@ BOOL encodepcx(PCX *pcx, BMP *pb)
                     numbyte = 1;
                 }
                 else numbyte++;
-            }
-            else
-            {
-                if (numbyte > 1 || lastbyte >= 0xc0)
-                {
+            } else {
+                if (numbyte > 1 || lastbyte >= 0xc0) {
                     if (ppdata >= ppend) return FALSE;
                     *ppdata++ = numbyte + 0xc0;
                 }
@@ -201,8 +191,7 @@ BOOL encodepcx(PCX *pcx, BMP *pb)
         pbdata -= pstride;
         pbdata += bstride;
 
-        if (numbyte > 1 || lastbyte >= 0xc0)
-        {
+        if (numbyte > 1 || lastbyte >= 0xc0) {
             if (ppdata >= ppend) return FALSE;
             *ppdata++ = numbyte + 0xc0;
         }
@@ -215,11 +204,10 @@ BOOL encodepcx(PCX *pcx, BMP *pb)
     *ppdata++ = 12;
 
     /* datasize */
-    pcx->datasize = ppdata - pcx->pdata;
+    pcx->datasize = (DWORD)(ppdata - pcx->pdata);
 
     getbmppal(pb, 0, 256, pal);
-    for (i=0; i<256; i++)
-    {
+    for (i=0; i<256; i++) {
         pcx->ppal[i * 3 + 0] = pal[i * 4 + 2];
         pcx->ppal[i * 3 + 1] = pal[i * 4 + 1];
         pcx->ppal[i * 3 + 2] = pal[i * 4 + 0];
@@ -247,14 +235,11 @@ BOOL decodepcx(PCX *pcx, BMP *pb)
     i = j = 0;
     ppdata = pcx->pdata;
     pbdata = pb ->pdata;
-    while (i < pb->height)
-    {
+    while (i < pb->height) {
         byte1 = *ppdata++;
-        if (byte1 > 0xc0 && pcx->encoding == 1)
-        {
+        if (byte1 > 0xc0 && pcx->encoding == 1) {
             byte2 = *ppdata++;
-            for (k=0; k<byte1-0xc0; k++)
-            {
+            for (k=0; k<byte1-0xc0; k++) {
                 *pbdata++ = byte2; j++;
                 if (j >= pb->width) {
                     pbdata -= pb->width;
@@ -263,9 +248,7 @@ BOOL decodepcx(PCX *pcx, BMP *pb)
                     i++;
                 }
             }
-        }
-        else
-        {
+        } else {
             *pbdata++ = byte1; j++;
             if (j >= pb->width) {
                 pbdata -= pb->width;
@@ -276,8 +259,7 @@ BOOL decodepcx(PCX *pcx, BMP *pb)
         }
     }
 
-    for (i=0; i<256; i++)
-    {
+    for (i=0; i<256; i++) {
         pal[i * 4 + 2] = pcx->ppal[i * 3 + 0];
         pal[i * 4 + 1] = pcx->ppal[i * 3 + 1];
         pal[i * 4 + 0] = pcx->ppal[i * 3 + 2];
@@ -308,14 +290,13 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
 
     SCREEN.width  = 640;
     SCREEN.height = 480;
-    SCREEN.cdepth = 8;
+    SCREEN.cdepth = 32;
     createbmp(&SCREEN);
-    setbmppal(&SCREEN, 0, 256, mybmp.ppal);
 
-    putbmppalmap(&SCREEN,
-                 (SCREEN.width  - mybmp.width ) / 2,
-                 (SCREEN.height - mybmp.height) / 2,
-                 &mybmp, NULL);
+    putbmp(&SCREEN,
+           (SCREEN.width  - mybmp.width ) / 2,
+           (SCREEN.height - mybmp.height) / 2,
+           &mybmp, FS_AUTO_LOCK, 0, 0, NULL);
     encodepcx(&mypcx2, &SCREEN);
 
     RGE_MSG_LOOP();

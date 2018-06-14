@@ -1,5 +1,5 @@
-#ifndef _PALETTE_H_
-#define _PALETTE_H_
+#ifndef __RGE_PAL_H__
+#define __RGE_PAL_H__
 
 /* 包含头文件 */
 #include "stdefine.h"
@@ -8,8 +8,8 @@
 /* 创建 256 色标准调色板 */
 void createstdpal(BYTE *pal);
 
-/* 调色板魔术 */
-void magicpal(BYTE *pal1, BYTE *pal2);
+/* 调色板逼近 pal1 -> pal2 */
+int approachpal(BYTE *pal1, BYTE *pal2);
 
 /* 左移右移调色板 */
 void rightrotpal(BYTE *pal);
@@ -20,8 +20,7 @@ void randpal(BYTE *pal);
 void graypal(BYTE *pal);
 
 /* swap rgb order in palette */
-enum
-{
+enum {
     SWAP_PAL_RGB,
     SWAP_PAL_RBG,
     SWAP_PAL_GRB,

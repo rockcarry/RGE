@@ -11,8 +11,7 @@
 /* 内部类型定义 */
 /* LZW 串表项类型定义 */
 /* prefixe code -1 means null */
-typedef struct
-{
+typedef struct {
     int  prefix;    /* 前缀       */
     int  firstbyte; /* 首字节     */
     int  lastbyte;  /* 尾字节     */
@@ -37,8 +36,7 @@ static BOOL AddToLZWStringTable(LZWCODEC *plc, int prefix, int byte, BOOL flag)
     strtab[plc->_str_tab_pos].firstbyte = strtab[prefix].firstbyte;
     strtab[plc->_str_tab_pos].lastbyte  = byte;
 
-    if (flag)
-    {
+    if (flag) {
         /* 更新前缀链表 */
         strtab[plc->_str_tab_pos].next = strtab[prefix].head;
         strtab[prefix].head            = plc->_str_tab_pos;
@@ -65,8 +63,7 @@ static int FindInLZWStringTable(LZWCODEC *plc, int prefix, int byte)
 
     /* 在 while 循环中遍历前缀链表 */
     link = strtab[prefix].head;
-    while (link)
-    {
+    while (link) {
         if (strtab[link].lastbyte == byte) return link;
         link = strtab[link].next;
     }
@@ -89,22 +86,21 @@ static int GetFirstByteOfLZWCode(LZWCODEC *plc, int code)
 }
 
 /* 输出解码后的 lzw 字符串 */
-static BOOL OutputLZWString(LZWCODEC *plc, void *fp, FIODRV *drv, int code)
+static BOOL OutputLZWString(LZWCODEC *plc, void *fp, FIO *fio, int code)
 {
     LZWSTRITEM *strtab = (LZWSTRITEM*)plc->_lzw_str_tab;
     DWORD      *pbuf   = plc->_lzw_str_buf;
     int         len    = 0;
 
     /* 构造 LZW 字符串 */
-    while (code != -1 && len++ < plc->LZW_TAB_SIZE)
-    {
+    while (code != -1 && len++ < plc->LZW_TAB_SIZE) {
        *pbuf++ = strtab[code].lastbyte;
         code   = strtab[code].prefix;
     }
 
     /* 将字符串输出到比特流 */
     while (len--) {
-        putbits(fp, drv, *--pbuf, plc->LZW_CODE_SIZE_OUT);
+        putbits(fp, *--pbuf, plc->LZW_CODE_SIZE_OUT, fio);
     }
 
     /* 返回成功 */
@@ -149,8 +145,7 @@ BOOL initlzwcodec(LZWCODEC *plc)
 
     /* init lzw root code */
     strtab = (LZWSTRITEM*)plc->_lzw_str_tab;
-    for (i=0; i<=plc->LZW_END_CODE; i++)
-    {
+    for (i=0; i<=plc->LZW_END_CODE; i++) {
         strtab[i].prefix    = -1;
         strtab[i].firstbyte =  i;
         strtab[i].lastbyte  =  i;
@@ -176,14 +171,12 @@ void resetlzwcodec(LZWCODEC *plc)
 void closelzwcodec(LZWCODEC *plc)
 {
 #if DYNMIC_MEMORY_ALLOCATION
-    if (plc->_lzw_str_tab)
-    {
+    if (plc->_lzw_str_tab) {
         free(plc->_lzw_str_tab);
         plc->_lzw_str_tab = NULL;
     }
 
-    if (plc->_lzw_str_buf)
-    {
+    if (plc->_lzw_str_buf) {
         free(plc->_lzw_str_buf);
         plc->_lzw_str_buf = NULL;
     }
@@ -218,16 +211,16 @@ static void dump_gif_codec(LZWCODEC *plc)
 #endif
 
 /* LZW 编码 */
-BOOL lzwencode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *drvin)
+BOOL lzwencode(LZWCODEC *plc, void *fpout, FIO *fioout, void *fpin, FIO *fioin)
 {
     int   curcodesize = plc->LZW_CODE_SIZE_MIN;
     int   findcode    = -1;
     int   prefixcode  = -1;
     DWORD currentbyte =  0;
 
-    /* default file io drv */
-    if (!drvin ) drvin  = &DEF_FIO_DRV;
-    if (!drvout) drvout = &DEF_FIO_DRV;
+    /* default fio */
+    if (!fioin ) fioin  = &DEF_FIO;
+    if (!fioout) fioout = &DEF_FIO;
 
     if (!plc || !fpin || !fpout) return FALSE;
 
@@ -235,32 +228,30 @@ BOOL lzwencode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *d
     resetlzwcodec(plc);
 
     /* while until there is no data in source bit stream */
-    while (getbits(fpin, drvin, &currentbyte, plc->LZW_ROOT_SIZE))
-    {
+    while (getbits(fpin, &currentbyte, plc->LZW_ROOT_SIZE, fioin)) {
         /* 在 LZW 编码表中查找由当前前缀和当前字符组成的字符串 */
         findcode = FindInLZWStringTable(plc, prefixcode, currentbyte);
 
-        if (findcode == -1)
-        {   /* 在 LZW 编码表中没有该字符串 */
+        if (findcode == -1) {
+            /* 在 LZW 编码表中没有该字符串 */
             /* 以当前的 codesize 写出当前前缀 */
-            if (!putbits(fpout, drvout, prefixcode, curcodesize)) {
+            if (!putbits(fpout, prefixcode, curcodesize, fioout)) {
                 log_printf("failed to write prefixcode !\n");
                 return FALSE;
             }
 
             /* 将当前前缀和当前字符所组成的字符串加入编码表 */
-            if (!AddToLZWStringTable(plc, prefixcode, currentbyte, TRUE))
-            {   /* 加入失败说明编码表已满 */
+            if (!AddToLZWStringTable(plc, prefixcode, currentbyte, TRUE)) {
+                /* 加入失败说明编码表已满 */
                 /* 写出一个 LZW_CLEAR_CODE 到比特流 */
-                if (!putbits(fpout, drvout, plc->LZW_CLEAR_CODE, curcodesize)) {
+                if (!putbits(fpout, plc->LZW_CLEAR_CODE, curcodesize, fioout)) {
                     log_printf("failed to write LZW_CLEAR_CODE !\n");
                     return FALSE;
                 }
                 resetlzwcodec(plc); /* reset lzw codec */
                 curcodesize = plc->LZW_CODE_SIZE_MIN; /* reset curcodesize */
-            }
-            else 
-            {   /* 加入到编码表成功 */
+            } else {
+                /* 加入到编码表成功 */
                 /* 根据 _str_tab_pos 重新计算新的 curcodesize */
                 if (   plc->_str_tab_pos - 1 == (1 << curcodesize)
                     && curcodesize < plc->LZW_CODE_SIZE_MAX) /* note: 这个限制条件必须要 */
@@ -272,23 +263,22 @@ BOOL lzwencode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *d
 
             /* 置当前前缀码为 currentbyte */
             prefixcode = currentbyte;
-        }
-        else
-        {   /* 在 LZW 编码表中找到该字符串 */
+        } else {
+            /* 在 LZW 编码表中找到该字符串 */
             /* 置当前前缀码为该字符串的编码 */
             prefixcode = findcode;
         }
 
 #if ENABLE_PROGRESS_CALLBACK
         /* 调用编码进度回调函数 */
-        if (plc->ppc) plc->ppc(0, drvin->tell(fpin));
+        if (plc->ppc) plc->ppc(0, fioin->tell(fpin));
 #endif
     }
 
     /* 最后需要写出剩余的码字和结束结束码 */
-    if (!putbits(fpout, drvout, prefixcode, curcodesize)) return FALSE;
-    if (!putbits(fpout, drvout, plc->LZW_END_CODE, curcodesize)) return FALSE;
-    if (!flushbits(fpout, drvout, 0)) return FALSE; /* 对比特流作 flush 操作 */
+    if (!putbits(fpout, prefixcode, curcodesize, fioout)) return FALSE;
+    if (!putbits(fpout, plc->LZW_END_CODE, curcodesize, fioout)) return FALSE;
+    if (!flushbits(fpout, 0, fioout)) return FALSE; /* 对比特流作 flush 操作 */
 
     /* 返回成功 */
     return TRUE;
@@ -296,16 +286,16 @@ BOOL lzwencode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *d
 
 /* LZW 解码 */
 #define resetlzwcodecfordecode(plc)  do { (plc)->_str_tab_pos = (plc)->LZW_END_CODE + 1; } while (0)
-BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *drvin)
+BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIO *fioout, void *fpin, FIO *fioin)
 {
     int   curcodesize = plc->LZW_CODE_SIZE_MIN;
     int   oldcode     = -1;
     DWORD curcode     =  0;
     BOOL  bfind       =  FALSE;
 
-    /* default file io drv */
-    if (!drvin ) drvin  = &DEF_FIO_DRV;
-    if (!drvout) drvout = &DEF_FIO_DRV;
+    /* default fio */
+    if (!fioin ) fioin  = &DEF_FIO;
+    if (!fioout) fioout = &DEF_FIO;
 
     if (!plc || !fpin || !fpout) {
         log_printf("lzwdecode:: invalid param !\n");
@@ -319,7 +309,7 @@ BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *d
        每次读入 LZW 编码到 curcode 中
        然后进行 LZW 的解码处理
        直到读到 LZW_END_CODE 结束 */
-    while ( getbits(fpin, drvin, &curcode, curcodesize)
+    while ( getbits(fpin, &curcode, curcodesize, fioin)
           && (int)curcode != plc->LZW_END_CODE )
     {
         /*
@@ -332,9 +322,8 @@ BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *d
             resetlzwcodecfordecode(plc); /* reset lzw codec */
             oldcode     = -1; /* set -1 to restart */
             curcodesize = plc->LZW_CODE_SIZE_MIN; /* reset curcodesize */
-        }
-        else
-        {   /* 如果读到的不是清除码 */
+        } else {
+            /* 如果读到的不是清除码 */
             /* 查找编码表中是否有该编码 */
             bfind = IsCodeInLZWStringTable(plc, (int)curcode);
 
@@ -351,7 +340,7 @@ BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *d
             }
 
             /* 写出当前字符串到输出比特流 */
-            if (!OutputLZWString(plc, fpout, drvout, (int)curcode)) {
+            if (!OutputLZWString(plc, fpout, fioout, (int)curcode)) {
                 log_printf("failed to write lzw string !\n");
                 return FALSE;
             }
@@ -362,12 +351,12 @@ BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *d
 
 #if ENABLE_PROGRESS_CALLBACK
         /* 调用编码进度回调函数 */
-        if (plc->ppc) plc->ppc(0, drvin->tell(fpin));
+        if (plc->ppc) plc->ppc(0, fioin->tell(fpin));
 #endif
     }
 
     /* 对比特流作 flush 操作 */
-    if (!flushbits(fpout, drvout, 0)) return FALSE;
+    if (!flushbits(fpout, 0, fioout)) return FALSE;
 
     /* 返回成功 */
     return TRUE;
@@ -396,19 +385,19 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     strcpy(decfile, lpszCmdLine); strcat(decfile, ".dec");
 
     initlzwcodec(&lzwcodec);
-    fpin  = DEF_FIO_DRV.open(orgfile, "rb");
-    fpout = DEF_FIO_DRV.open(encfile, "wb");
-    lzwencode(&lzwcodec, fpout, &DEF_FIO_DRV, fpin, &DEF_FIO_DRV);
-    DEF_FIO_DRV.close(fpin );
-    DEF_FIO_DRV.close(fpout);
+    fpin  = DEF_FIO.open(orgfile, "rb");
+    fpout = DEF_FIO.open(encfile, "wb");
+    lzwencode(&lzwcodec, fpout, &DEF_FIO, fpin, &DEF_FIO);
+    DEF_FIO.close(fpin );
+    DEF_FIO.close(fpout);
     closelzwcodec(&lzwcodec);
 
     initlzwcodec(&lzwcodec);
-    fpin  = DEF_FIO_DRV.open(encfile, "rb");
-    fpout = DEF_FIO_DRV.open(decfile, "wb");
-    lzwdecode(&lzwcodec, fpout, &DEF_FIO_DRV, fpin, &DEF_FIO_DRV);
-    DEF_FIO_DRV.close(fpin );
-    DEF_FIO_DRV.close(fpout);
+    fpin  = DEF_FIO.open(encfile, "rb");
+    fpout = DEF_FIO.open(decfile, "wb");
+    lzwdecode(&lzwcodec, fpout, &DEF_FIO, fpin, &DEF_FIO);
+    DEF_FIO.close(fpin );
+    DEF_FIO.close(fpout);
     closelzwcodec(&lzwcodec);
 
     log_done();

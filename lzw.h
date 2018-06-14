@@ -1,13 +1,12 @@
-#ifndef _LZW_H_
-#define _LZW_H_
+#ifndef __RGE_LZW_H__
+#define __RGE_LZW_H__
 
 /* 包含头文件 */
-#include "fiodrv.h"
+#include "fio.h"
 
 /* 类型定义 */
 /* LZW 编解码器类型定义 */
-typedef struct
-{
+typedef struct {
     /* 编解码进度控制函数 */
     void (*ppc)(long total, long cur);
 
@@ -35,8 +34,8 @@ BOOL initlzwcodec (LZWCODEC *plc);
 void resetlzwcodec(LZWCODEC *plc);
 void closelzwcodec(LZWCODEC *plc);
 
-BOOL lzwencode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *drvin);
-BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIODRV *drvout, void *fpin, FIODRV *drvin);
+BOOL lzwencode(LZWCODEC *plc, void *fpout, FIO *fioout, void *fpin, FIO *fioin);
+BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIO *fioout, void *fpin, FIO *fioin);
 
 #endif
 

@@ -14,15 +14,13 @@ void RGE_WIN_INIT(HINSTANCE hInst)
     RGE_APP_INSTANCE = hInst;
 }
 
-int RGE_MSG_LOOP(void)
+void RGE_MSG_LOOP(void)
 {
     MSG msg = {0};
-    while (GetMessage(&msg, NULL, 0, 0))
-    {
+    while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage (&msg);
     }
-    return msg.wParam;
 }
 
 HINSTANCE RGE_GET_APP_INSTANCE(void)
@@ -35,12 +33,11 @@ HINSTANCE RGE_GET_APP_INSTANCE(void)
  */
 
 /* 常量定义 */
-#define RGE_WND_CLASS "RGEWndClass"
-#define RGE_WND_NAME  "RGE"
+#define RGE_WND_CLASS TEXT("RGEWndClass")
+#define RGE_WND_NAME  TEXT("RGE")
 
 /* 类型定义 */
-typedef struct
-{
+typedef struct {
     HWND    hwnd;
     DWORD   style;
     WNDPROC wndproc;
@@ -56,17 +53,6 @@ static void _windrv_unlock(void *pb);
 static void _windrv_setpal(void *pb, int i, int n, BYTE *pal);
 static void _windrv_getpal(void *pb, int i, int n, BYTE *pal);
 
-/* 全局变量定义 */
-static BMPDRV WINSCREEN_DRV =
-{
-    _windrv_createbmp,
-    _windrv_destroybmp,
-    _windrv_lock,
-    _windrv_unlock,
-    _windrv_setpal,
-    _windrv_getpal,
-};
-
 static BMP_EXTRA_WIN WINSCREEN_EXTRA =
 {
     NULL,
@@ -76,9 +62,14 @@ static BMP_EXTRA_WIN WINSCREEN_EXTRA =
 
 BMP WINSCREEN =
 {
-    &WINSCREEN_DRV,
     0, 0, 0, 0, {0, 0, 0, 0}, NULL, NULL,
     &WINSCREEN_EXTRA,
+    _windrv_createbmp,
+    _windrv_destroybmp,
+    _windrv_lock,
+    _windrv_unlock,
+    _windrv_setpal,
+    _windrv_getpal,
 };
 
 /* 内部函数实现 */
@@ -108,8 +99,7 @@ static BOOL _windrv_createbmp(void *pb)
     bmpinfo->bmiHeader.biPlanes   =  1;
     bmpinfo->bmiHeader.biBitCount =  pbmp->cdepth;
 
-    switch (pbmp->cdepth)
-    {
+    switch (pbmp->cdepth) {
     case 8:
         bmpinfo->bmiHeader.biCompression = BI_RGB;
         memcpy((BYTE*)bmpinfo->bmiColors, pbmp->ppal, 256 * 4);
@@ -167,6 +157,7 @@ static void _windrv_destroybmp(void *pb)
     pextra->hwnd = NULL;
     pextra->hdc  = NULL;
     pextra->hbmp = NULL;
+    pbmp->pdata  = NULL;
 }
 
 static void _windrv_lock(void *pb)
@@ -211,8 +202,7 @@ LRESULT CALLBACK DEF_WINSCREEN_WNDPROC(
     PAINTSTRUCT ps = {0};
     HDC        hdc = NULL;
 
-    switch (uMsg)
-    {
+    switch (uMsg) {
     case WM_PAINT:
         hdc = BeginPaint(hwnd, &ps);
         BitBlt(hdc,
@@ -243,8 +233,7 @@ LRESULT CALLBACK DEF_WINSCREEN_WNDPROC(
 #include "dx/ddraw.h"
 
 /* 类型定义 */
-typedef struct
-{
+typedef struct {
     HWND    hwnd;
     DWORD   style;
     WNDPROC wndproc;
@@ -261,17 +250,6 @@ static void _ddrawdrv_unlock(void *pb);
 static void _ddrawdrv_setpal(void *pb, int i, int n, BYTE *pal);
 static void _ddrawdrv_getpal(void *pb, int i, int n, BYTE *pal);
 
-/* 全局变量定义 */
-static BMPDRV DDRAWSCREEN_DRV =
-{
-    _ddrawdrv_createbmp,
-    _ddrawdrv_destroybmp,
-    _ddrawdrv_lock,
-    _ddrawdrv_unlock,
-    _ddrawdrv_setpal,
-    _ddrawdrv_getpal,
-};
-
 static BMP_EXTRA_DDRAW DDRAWSCREEN_EXTRA =
 {
     NULL,
@@ -281,9 +259,14 @@ static BMP_EXTRA_DDRAW DDRAWSCREEN_EXTRA =
 
 BMP DDRAWSCREEN =
 {
-    &DDRAWSCREEN_DRV,
     0, 0, 0, 0, {0, 0, 0, 0}, NULL, NULL,
     &DDRAWSCREEN_EXTRA,
+    _ddrawdrv_createbmp,
+    _ddrawdrv_destroybmp,
+    _ddrawdrv_lock,
+    _ddrawdrv_unlock,
+    _ddrawdrv_setpal,
+    _ddrawdrv_getpal,
 };
 
 /* 内部函数实现 */
@@ -327,8 +310,7 @@ static BOOL _ddrawdrv_createbmp(void *pb)
     if (pbmp->cdepth == 8) {
         BYTE swp[256*4];
         int  i;
-        for (i=0; i<256; i++)
-        {
+        for (i=0; i<256; i++) {
             swp[i*4 + 0] = pbmp->ppal[i*4 + 2];
             swp[i*4 + 1] = pbmp->ppal[i*4 + 1];
             swp[i*4 + 2] = pbmp->ppal[i*4 + 0];
@@ -391,8 +373,7 @@ static void _ddrawdrv_setpal(void *pb, int i, int n, BYTE *pal)
     BYTE             swp[256*4];
     int              j;
 
-    for (j=0; j<n; j++)
-    {
+    for (j=0; j<n; j++) {
         swp[j*4 + 0] = pal[j*4 + 2];
         swp[j*4 + 1] = pal[j*4 + 1];
         swp[j*4 + 2] = pal[j*4 + 0];
@@ -408,8 +389,7 @@ static void _ddrawdrv_getpal(void *pb, int i, int n, BYTE *pal)
     int              j;
 
     if (pextra->lpDDPalette) pextra->lpDDPalette->GetEntries(0, i, n, (LPPALETTEENTRY)swp);
-    for (j=0; j<n; j++)
-    {
+    for (j=0; j<n; j++) {
         pal[j*4 + 0] = swp[j*4 + 2];
         pal[j*4 + 1] = swp[j*4 + 1];
         pal[j*4 + 2] = swp[j*4 + 0];
@@ -423,8 +403,7 @@ LRESULT CALLBACK DEF_DDRAWSCREEN_WNDPROC(
     LPARAM lParam   /* second message parameter */
 )
 {
-    switch (uMsg)
-    {
+    switch (uMsg) {
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
@@ -460,8 +439,6 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     SCREEN.cdepth = 16;
     createbmp(&SCREEN);
 
-    #define RGB555(r, g, b)  ( (((r) & 0xF8) <<  7) | (((g) & 0xF8) << 2) | (((b) & 0xF8) >> 3) )
-    #define RGB565(r, g, b)  ( (((r) & 0xF8) <<  8) | (((g) & 0xFC) << 3) | (((b) & 0xF8) >> 3) )
     lockbmp(&SCREEN);
     for (i=0; i<SCREEN.height; i++)
         for (j=0; j<SCREEN.width; j++)

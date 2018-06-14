@@ -1,10 +1,9 @@
 /* 标准头文件 */
-#ifndef _STDEFINE_H_
-#define _STDEFINE_H_
+#ifndef __STDEFINE_H__
+#define __STDEFINE_H__
 
-#if defined(__MINGW32__)
+#if defined(WIN32) || defined(__MINGW32__)
 #include <windows.h>
-#undef RGB // undef RGB
 #else
 
 /* 常量定义 */
@@ -19,8 +18,7 @@ typedef unsigned long  DWORD;
 typedef long     int   LONG;
 
 /* 矩形类型定义 */
-typedef struct
-{
+typedef struct {
     int left;
     int top;
     int right;
@@ -36,7 +34,7 @@ typedef struct
 #define DO_USE_VAR(var)  do { var = var; } while (0)
 
 /* 编译开关 */
-#define ENABLE_WIN32_DDRAW
+// #define ENABLE_WIN32_DDRAW
 
 #endif
 

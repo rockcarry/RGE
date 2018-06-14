@@ -1,14 +1,12 @@
-#ifndef _FONT_H_
-#define _FONT_H_
+#ifndef __RGE_FONT_H__
+#define __RGE_FONT_H__
 
 /* 包含头文件 */
 #include <stdio.h>
 #include "stdefine.h"
-#include "draw2d.h"
 
 /* 字体类型定义 */
-typedef struct
-{
+typedef struct {
     BYTE  hzk_width;     /* 点阵汉字的宽度 */
     BYTE  hzk_height;    /* 点阵汉字的高度 */
     BYTE  asc_width;     /* 点阵英文字的宽度 */
@@ -23,8 +21,7 @@ typedef struct
 } FONT;
 
 /* 文本框类型定义 */
-typedef struct
-{
+typedef struct {
     int   xpos;       /* 文本框的位置 x 坐标 */
     int   ypos;       /* 文本框的位置 y 坐标 */
     int   width;      /* 文本框的宽度 */
@@ -50,9 +47,8 @@ void settextfont (void *ctxt, FONT *font );
 void settextcolor(void *ctxt, DWORD color);
 
 /* TEXTBOX 相关函数 */
-void resettextbox(TEXTBOX *ptb);
-int  magictextbox(void *ctxt, TEXTBOX *ptb);
-int  outtextbox  (void *ctxt, TEXTBOX *ptb);
+void resettextbox(void *ctxt, TEXTBOX *ptb);
+int  printtextbox(void *ctxt, TEXTBOX *ptb, int *steps);
 
 /* 文本输出函数 */
 int  printtext(void *ctxt, char *txt);

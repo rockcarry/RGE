@@ -1,7 +1,7 @@
 #ifndef _TEST_
 
 /* 包含头文件 */
-#include "palette.h"
+#include "pal.h"
 
 #if 0
 /* 全局变量声明定义 */
@@ -80,18 +80,11 @@ BYTE STDPAL[] = {
 /* 创建 256 色标准调色板 */
 void createstdpal(BYTE *pal)
 {
-    int r;
-    int g;
-    int b;
-
+    int r, g, b;
     if (!pal) return;
-
-    for (r=0; r<256; r+=36)
-    {
-        for (g=0; g<256; g+=36)
-        {
-            for (b=0; b<256; b+=85)
-            {
+    for (r=0; r<256; r+=36) {
+        for (g=0; g<256; g+=36) {
+            for (b=0; b<256; b+=85) {
                 *pal++ = b;
                 *pal++ = g;
                 *pal++ = r;
@@ -101,30 +94,30 @@ void createstdpal(BYTE *pal)
     }
 }
 
-/* 调色板魔术 */
-void magicpal(BYTE *pal1, BYTE *pal2) /* pal2 向 pal1 过渡 */
+/* 调色板逼近 */
+int approachpal(BYTE *pal1, BYTE *pal2) /* pal1 -> pal2 */
 {
-    int i;
+    int ret, i;
 
-    if (!pal1 || !pal2) return;
+    if (!pal1 || !pal2) return -1;
 
     pal1 += 4;  /* 跳过 0 号调色板 */
     pal2 += 4;  /* 跳过 0 号调色板 */
+    ret   = 0;
 
-    for (i=4; i<256*4; i++)
-    {
-        if     (*pal2 > *pal1) (*pal2)--;
-        else if(*pal2 < *pal1) (*pal2)++;
+    for (i=4; i<256*4; i++) {
+        if      (*pal1 > *pal2) (*pal1)--;
+        else if (*pal1 < *pal2) (*pal1)++;
+        else    ret++;
         pal1++; pal2++;
     }
+    return ret;
 }
 
 /* 向右旋转调色板 */
 void rightrotpal(BYTE *pal)
 {
-    BYTE r;
-    BYTE g;
-    BYTE b;
+    BYTE r, g, b;
     int  i;
 
     if (!pal) return;
@@ -134,8 +127,7 @@ void rightrotpal(BYTE *pal)
     r = *(pal + (256 - 1) * 4 + 2);
 
     pal += (256 - 1) * 4;
-    for (i=(256-1); i>=2; i--)
-    {
+    for (i=(256-1); i>=2; i--) {
         *(pal + 0) = *(pal + 0 - 4);
         *(pal + 1) = *(pal + 1 - 4);
         *(pal + 2) = *(pal + 2 - 4);
@@ -150,9 +142,7 @@ void rightrotpal(BYTE *pal)
 /* 向左旋转调色板 */
 void leftrotpal(BYTE *pal)
 {
-    BYTE r;
-    BYTE g;
-    BYTE b;
+    BYTE r, g, b;
     int  i;
 
     if (!pal) return;
@@ -162,8 +152,7 @@ void leftrotpal(BYTE *pal)
     r = *(pal + 1 * 4 + 2);
 
     pal += 4;  /* 跳过 0 号调色板 */
-    for (i=1; i<=(256-2); i++)
-    {
+    for (i=1; i<=(256-2); i++) {
         *(pal + 0) = *(pal + 0 + 4);
         *(pal + 1) = *(pal + 1 + 4);
         *(pal + 2) = *(pal + 2 + 4);
@@ -185,8 +174,7 @@ void randpal(BYTE *pal)
 
     if (!pal) return;
 
-    for (i=0; i<4; i++)
-    {
+    for (i=0; i<4; i++) {
         temp = *(pal + m * 4 + i);
         *(pal + m * 4 + i) = *(pal + n * 4 + i);
         *(pal + n * 4 + i) = temp;
@@ -196,16 +184,15 @@ void randpal(BYTE *pal)
 /* 灰度化调色板 */
 void graypal(BYTE *pal)
 {
-    int  i;
     BYTE gray;
+    int  i;
 
     if (!pal) return;
 
     pal += 4;  /* 跳过 0 号调色板 */
-    for (i=1; i<256; i++)
-    {
+    for (i=1; i<256; i++) {
         gray = (BYTE)(*(pal + 2) * 0.299 + *(pal + 1) * 0.587 + *(pal + 0) * 0.114 + 0.5);
-       *(pal + 0) = *(pal + 1) = *(pal + 2) = gray;
+        *(pal + 0) = *(pal + 1) = *(pal + 2) = gray;
         pal += 4;
     }
 }
@@ -213,9 +200,7 @@ void graypal(BYTE *pal)
 /* swap palette */
 void swappal(BYTE *pal, int order)
 {
-    BYTE r;
-    BYTE g;
-    BYTE b;
+    BYTE r, g, b;
     int  i;
 
     if (!pal) return;
@@ -224,8 +209,7 @@ void swappal(BYTE *pal, int order)
     switch (order)
     {
     case SWAP_PAL_RBG:
-        for (i=1; i<256; i++)
-        {
+        for (i=1; i<256; i++) {
             r = *(pal + 2);
             g = *(pal + 1);
             b = *(pal + 0);
@@ -236,8 +220,7 @@ void swappal(BYTE *pal, int order)
         }
         break;
     case SWAP_PAL_GRB:
-        for (i=1; i<256; i++)
-        {
+        for (i=1; i<256; i++) {
             r = *(pal + 2);
             g = *(pal + 1);
             b = *(pal + 0);
@@ -248,8 +231,7 @@ void swappal(BYTE *pal, int order)
         }
         break;
     case SWAP_PAL_GBR:
-        for (i=1; i<256; i++)
-        {
+        for (i=1; i<256; i++) {
             r = *(pal + 2);
             g = *(pal + 1);
             b = *(pal + 0);
@@ -260,8 +242,7 @@ void swappal(BYTE *pal, int order)
         }
         break;
     case SWAP_PAL_BRG:
-        for (i=1; i<256; i++)
-        {
+        for (i=1; i<256; i++) {
             r = *(pal + 2);
             g = *(pal + 1);
             b = *(pal + 0);
@@ -272,8 +253,7 @@ void swappal(BYTE *pal, int order)
         }
         break;
     case SWAP_PAL_BGR:
-        for (i=1; i<256; i++)
-        {
+        for (i=1; i<256; i++) {
             r = *(pal + 2);
             g = *(pal + 1);
             b = *(pal + 0);
@@ -300,11 +280,9 @@ BYTE PALRGB(BYTE *pal, BYTE r, BYTE g, BYTE b)
     mind  = (pal[0] - b) * (pal[0] - b) + (pal[1] - g) * (pal[1] - g) + (pal[2] - r) * (pal[2] - r);
     pal  += 4;
 
-    for (i=1; i<256; i++)
-    {
+    for (i=1; i<256; i++) {
         newd = (pal[0] - b) * (pal[0] - b) + (pal[1] - g) * (pal[1] - g) + (pal[2] - r) * (pal[2] - r);
-        if (newd < mind)
-        {
+        if (newd < mind) {
             mind  = newd;
             color = i;
         }
@@ -315,8 +293,8 @@ BYTE PALRGB(BYTE *pal, BYTE r, BYTE g, BYTE b)
 }
 
 #else
+#include "pal.h"
 #include "win.h"
-#include "palette.h"
 
 LRESULT CALLBACK MyWndProc(
     HWND hwnd,      /* handle to window */
@@ -354,7 +332,6 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     SetWindowLong(hwnd, GWL_WNDPROC, (long)MyWndProc);
     SetTimer(hwnd, 1, 50, NULL);
 
-    #define RGB332(r, g, b)  ( (((r) & 0xE0) <<  0) | (((g) & 0xE0) >> 3) | (((b) & 0xC0) >> 6) )
     lockbmp(&SCREEN);
     for (i=0; i<SCREEN.height; i++)
         for (j=0; j<SCREEN.width; j++)

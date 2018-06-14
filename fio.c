@@ -1,25 +1,22 @@
 /* 包含头文件 */
 #include <stdio.h>
-#include "fiodrv.h"
+#include "fio.h"
 
 /* 内部类型定义 */
-typedef struct
-{
+typedef struct {
     BYTE    bitbuf;
     int     bitflag;
     FILE   *fp;
 } DEF_FIO_CONTEXT;
 
-static void* _def_fio_open(const char *url, const char *mode)
-{
+static void* _def_fio_open(const char *url, const char *mode) {
     DEF_FIO_CONTEXT *ctxt = NULL;
 
     ctxt = malloc(sizeof(DEF_FIO_CONTEXT));
     if (!ctxt) return NULL;
 
     ctxt->fp = fopen(url, mode);
-    if (!ctxt->fp)
-    {
+    if (!ctxt->fp) {
         free(ctxt);
         return NULL;
     }
@@ -34,8 +31,7 @@ static int _def_fio_close(void *fp)
     DEF_FIO_CONTEXT *ctxt = (DEF_FIO_CONTEXT*)fp;
     int retv = EOF;
 
-    if (ctxt)
-    {
+    if (ctxt) {
         retv = fclose(ctxt->fp);
         free(ctxt);
     }
@@ -131,7 +127,7 @@ static int _def_fio_flush(void *fp)
 }
 
 /* 全局变量定义 */
-FIODRV DEF_FIO_DRV =
+FIO DEF_FIO =
 {
     _def_fio_open,
     _def_fio_close,
@@ -146,9 +142,8 @@ FIODRV DEF_FIO_DRV =
 };
 
 
-/* MEM_FIO_DRV 实现 */
-typedef struct
-{
+/* MEM_FIO 实现 */
+typedef struct {
     BYTE    bitbuf;
     int     bitflag;
     BYTE   *pdata;
@@ -165,13 +160,12 @@ static void* _mem_fio_open(const char *pbuf, const char *length)
     if (!ctxt) return NULL;
 
     ctxt->pdata  = (BYTE*)pbuf;
-    ctxt->length = (int)length;
+    ctxt->length = (long )length;
 
     if (!ctxt->pdata) {
         ctxt->pdata = malloc(ctxt->length);
         ctxt->openflag = 1;
-    }
-    else ctxt->openflag = 0;
+    } else ctxt->openflag = 0;
 
     ctxt->bitbuf  = 0;
     ctxt->bitflag = 0;
@@ -184,8 +178,7 @@ static int _mem_fio_close(void *fp)
     MEM_FIO_CONTEXT *ctxt = (MEM_FIO_CONTEXT*)fp;
     int retv = EOF;
 
-    if (ctxt)
-    {
+    if (ctxt) {
         if (ctxt->openflag) {
             free(ctxt->pdata);
         }
@@ -230,8 +223,8 @@ static size_t _mem_fio_read(void *buf, size_t size, size_t count, void *fp)
 {
     MEM_FIO_CONTEXT *ctxt = (MEM_FIO_CONTEXT*)fp;
     size_t retv  = 0;
-    size_t total = size * count;
-    size_t num;
+    long   total = (long)(size * count);
+    long   num;
 
     if (ctxt) {
         if (ctxt->pdata) {
@@ -247,9 +240,9 @@ static size_t _mem_fio_read(void *buf, size_t size, size_t count, void *fp)
 static size_t _mem_fio_write(const void *buf, size_t size, size_t count, void *fp)
 {
     MEM_FIO_CONTEXT *ctxt = (MEM_FIO_CONTEXT*)fp;
-    size_t retv = 0;
-    size_t total = size * count;
-    size_t num;
+    size_t retv  = 0;
+    long   total = (long)(size * count);
+    long   num;
 
     if (ctxt) {
         if (ctxt->pdata) {
@@ -282,8 +275,7 @@ static int _mem_fio_seek(void *fp, long offset, int org)
 
     if (ctxt) {
         if (ctxt->pdata) {
-            switch (org)
-            {
+            switch (org) {
             case SEEK_CUR:
                 ctxt->curpos += offset;
                 break;
@@ -297,8 +289,7 @@ static int _mem_fio_seek(void *fp, long offset, int org)
             }
             if (ctxt->curpos < 0) {
                 ctxt->curpos = 0;
-            }
-            else if (ctxt->curpos > ctxt->length) {
+            } else if (ctxt->curpos > ctxt->length) {
                 ctxt->curpos = ctxt->length;
             }
             else retv = 0;
@@ -336,7 +327,7 @@ static int _mem_fio_flush(void *fp)
 }
 
 /* 全局变量定义 */
-FIODRV MEM_FIO_DRV =
+FIO MEM_FIO =
 {
     _mem_fio_open,
     _mem_fio_close,
@@ -352,18 +343,17 @@ FIODRV MEM_FIO_DRV =
 
 
 /* 函数实现 */
-BOOL getbits(void *fp, FIODRV *drv, DWORD *data, int size)
+BOOL getbits(void *fp, DWORD *data, int size, FIO *fio)
 {
     FIO_CONTEXT *ctxt = (FIO_CONTEXT*)fp;
     int pos, byte, need, i;
 
     need = (size - ctxt->bitflag + 7) / 8;
-    if (need > 0)
-    {
+    if (need > 0) {
        *data = ctxt->bitbuf;
         pos  = ctxt->bitflag;
         for (i=0; i<need; i++) {
-            byte = drv->getc(fp);
+            byte = fio->getc(fp);
             if (byte == EOF) return FALSE;
 
            *data |= byte << pos;
@@ -371,9 +361,7 @@ BOOL getbits(void *fp, FIODRV *drv, DWORD *data, int size)
         }
         ctxt->bitflag = need * 8 + ctxt->bitflag - size;
         ctxt->bitbuf  = byte >> (8 - ctxt->bitflag);
-    }
-    else
-    {
+    } else {
        *data  = ctxt->bitbuf;
         ctxt->bitflag -= size;
         ctxt->bitbuf >>= size;
@@ -382,28 +370,26 @@ BOOL getbits(void *fp, FIODRV *drv, DWORD *data, int size)
     return TRUE;
 }
 
-BOOL putbits(void *fp, FIODRV *drv, DWORD data, int size)
+BOOL putbits(void *fp, DWORD data, int size, FIO *fio)
 {
     FIO_CONTEXT *ctxt = (FIO_CONTEXT*)fp;
     int nbit;
 
     data &= (1L << size) - 1;
 
-    if (ctxt->bitflag)
-    {
+    if (ctxt->bitflag) {
         nbit = size < 8 - ctxt->bitflag ? size : 8 - ctxt->bitflag;
         ctxt->bitbuf |= data << ctxt->bitflag;
         ctxt->bitflag+= nbit;
         if (ctxt->bitflag < 8) return TRUE;
 
-        if (EOF == drv->putc(ctxt->bitbuf, fp)) return FALSE;
+        if (EOF == fio->putc(ctxt->bitbuf, fp)) return FALSE;
         data >>= nbit;
         size  -= nbit;
     }
 
-    while (size >= 8)
-    {
-        if (EOF == drv->putc(data, fp)) return FALSE;
+    while (size >= 8) {
+        if (EOF == fio->putc(data, fp)) return FALSE;
         data >>= 8;
         size  -= 8;
     }
@@ -413,7 +399,7 @@ BOOL putbits(void *fp, FIODRV *drv, DWORD data, int size)
     return TRUE;
 }
 
-BOOL flushbits(void *fp, FIODRV *drv, int flag)
+BOOL flushbits(void *fp, int flag, FIO *fio)
 {
     FIO_CONTEXT *ctxt = (FIO_CONTEXT*)fp;
     DWORD fill;
@@ -423,11 +409,11 @@ BOOL flushbits(void *fp, FIODRV *drv, int flag)
     if (flag) fill = 0xffffffff;
     else      fill = 0;
 
-    if (!putbits(fp, drv, fill, 8 - ctxt->bitflag)) return FALSE;
+    if (!putbits(fp, fill, 8 - ctxt->bitflag, fio)) return FALSE;
     else return TRUE;
 }
 
-BOOL alignbyte(void *fp, FIODRV *drv)
+BOOL alignbyte(void *fp, FIO *fio)
 {
     FIO_CONTEXT *ctxt = (FIO_CONTEXT*)fp;
     ctxt->bitflag = 0;

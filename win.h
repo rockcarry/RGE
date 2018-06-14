@@ -1,12 +1,12 @@
-#ifndef _RGE_WIN_H_
-#define _RGE_WIN_H_
+#ifndef __RGE_WIN_H__
+#define __RGE_WIN_H__
 
 /* 包含头文件 */
 #include "bmp.h"
 
 /* 函数声明 */
 void RGE_WIN_INIT(HINSTANCE hInst);
-int  RGE_MSG_LOOP(void);
+void RGE_MSG_LOOP(void);
 
 /* 获取 RGE windows app 的实例句柄 */
 HINSTANCE RGE_GET_APP_INSTANCE(void);

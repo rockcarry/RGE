@@ -1,11 +1,8 @@
 #ifndef _TEST_
 
 /* 包含头文件 */
+#include "drawctxt.h"
 #include "font.h"
-#include "fnps/fnps.h"
-
-/* 外部函数声明 */
-extern DWORD convertcolor(int cdepth, DWORD color);
 
 /* 预定义字体 */
 FONT FONT12 = {12, 12,  6, 12, "font/hzk1212.dat", "font/asc0612.dat"};
@@ -14,7 +11,7 @@ FONT FONT24 = {24, 24, 12, 21, "font/hzk2424.dat", "font/asc1221.dat"};
 
 /* 内部函数实现 */
 /* draw raster font */
-static void drawrasterfont(void *ctxt, int x, int y, BYTE *data, int w, int h)
+static void draw_raster_font(void *ctxt, int x, int y, BYTE *data, int w, int h)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
     PFNPIXEL pixel;
@@ -24,22 +21,17 @@ static void drawrasterfont(void *ctxt, int x, int y, BYTE *data, int w, int h)
     // invalid ctxt
     if (!ctxt || !data) return;
 
-    if (pc->alpha) pixel = pc->pixelalpha;
-    else           pixel = pc->pixelsolid;
+    pixel = pc->drawalpha ? pc->pixelalpha : pc->pixelsolid;
     color = pc->textcolor;
 
     /* w 对齐到 8 */
     w = (w + 7) / 8 * 8;
 
     /* 绘制字模 */
-    for (; h>0; h--,y++,x-=w)
-    {
-        for (i=0; i<w/8; i++,data++)
-        {
-            for (j=7; j>=0; j--,x++)
-            {
-                if (*data & (1 << j))
-                {
+    for (; h>0; h--,y++,x-=w) {
+        for (i=0; i<w/8; i++,data++) {
+            for (j=7; j>=0; j--,x++) {
+                if (*data & (1 << j)) {
                     if (  x + j >= pc->dstbmp->clipper.left
                        && x + j <= pc->dstbmp->clipper.right
                        && y + i >= pc->dstbmp->clipper.top
@@ -54,7 +46,7 @@ static void drawrasterfont(void *ctxt, int x, int y, BYTE *data, int w, int h)
 }
 
 /* 输出一个汉字的函数 */
-static void _draw_hz(DRAWCONTEXT *pc, char hz[2], int x, int y)
+static void draw_hz(DRAWCONTEXT *pc, char hz[2], int x, int y)
 {
     FONT *pf = (FONT*)pc->textfont;
     int  ch0 = (BYTE)hz[0] - 0xA0;
@@ -63,18 +55,18 @@ static void _draw_hz(DRAWCONTEXT *pc, char hz[2], int x, int y)
     long offset = pf->_hzk_buf_size * ((ch0 - 1L) * 94 + (ch1 - 1L));
     fseek(pf->_hzk_fp, offset, SEEK_SET);
     fread(pf->_font_buf, pf->_hzk_buf_size, 1, pf->_hzk_fp);
-    drawrasterfont(pc, x, y, pf->_font_buf, pf->hzk_width, pf->hzk_height);
+    draw_raster_font(pc, x, y, pf->_font_buf, pf->hzk_width, pf->hzk_height);
 }
 
 /* 输出一个英文字符的函数 */
-static void _draw_asc(DRAWCONTEXT *pc, char asc, int x, int y)
+static void draw_asc(DRAWCONTEXT *pc, char asc, int x, int y)
 {
     FONT *pf     = (FONT*)pc->textfont;
     long  offset = (long)asc * pf->_asc_buf_size;
 
     fseek(pf->_asc_fp, offset, SEEK_SET);
     fread(pf->_font_buf, pf->_asc_buf_size, 1, pf->_asc_fp);
-    drawrasterfont(pc, x, y, pf->_font_buf, pf->asc_width, pf->asc_height);
+    draw_raster_font(pc, x, y, pf->_font_buf, pf->asc_width, pf->asc_height);
 }
 
 BOOL loadfont(FONT *pf)
@@ -107,20 +99,17 @@ void freefont(FONT *pf)
 {
     if (!pf) return;
 
-    if (pf->_hzk_fp)
-    {
+    if (pf->_hzk_fp) {
         fclose(pf->_hzk_fp);
         pf->_hzk_fp = NULL;
     }
 
-    if (pf->_asc_fp)
-    {
+    if (pf->_asc_fp) {
         fclose(pf->_asc_fp);
         pf->_asc_fp = NULL;
     }
 
-    if (pf->_font_buf)
-    {
+    if (pf->_font_buf) {
         free(pf->_font_buf);
         pf->_font_buf = NULL;
     }
@@ -143,18 +132,19 @@ void settextcolor(void *ctxt, DWORD color)
     // invalid ctxt & brush
     if (!ctxt) return;
 
-    pc->textcolor = convertcolor(pc->dstbmp->cdepth, color);
+    pc->textcolor = COLOR_CONVERT(pc->dstbmp->cdepth, color);
 }
 
 /* TEXTBOX 相关函数 */
-void resettextbox(TEXTBOX *ptb)
+void resettextbox(void *ctxt, TEXTBOX *ptb)
 {
+    DO_USE_VAR(ctxt);
     if (!ptb) return;
     ptb->_cur_xpos = ptb->xpos;
     ptb->_cur_ypos = ptb->ypos;
 }
 
-int magictextbox(void *ctxt, TEXTBOX *ptb)
+static int textbox_print_1step(void *ctxt, TEXTBOX *ptb)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
     FONT        *pf = (FONT*)pc->textfont;
@@ -168,8 +158,7 @@ int magictextbox(void *ctxt, TEXTBOX *ptb)
     fah = pf->asc_height;
 
     /* 对不同的文字进行分别处理 */
-    switch (ptb->text[ptb->cursor])
-    {
+    switch (ptb->text[ptb->cursor]) {
     case '\0':  /* 字符串结束符 */
         ptb->cursor = 0;
         return 1; /* text box end */
@@ -181,21 +170,18 @@ int magictextbox(void *ctxt, TEXTBOX *ptb)
         break;
 
     default:
-        if (ptb->text[ptb->cursor] & 0x80)
-        {   /* 中文字符 */
+        if (ptb->text[ptb->cursor] & 0x80) {
+            /* 中文字符 */
             if (!ptb->calrect) {
-               _draw_hz(pc, &(ptb->text[ptb->cursor]),
-                    ptb->_cur_xpos, ptb->_cur_ypos);
+               draw_hz(pc, &(ptb->text[ptb->cursor]), ptb->_cur_xpos, ptb->_cur_ypos);
             }
             ptb->_cur_xpos += fhw;
             ptb->cursor++;
             ptb->cursor++;
-        }
-        else
-        {   /* 英文字符 */
+        } else {
+            /* 英文字符 */
             if (!ptb->calrect) {
-                _draw_asc(pc, ptb->text[ptb->cursor],
-                    ptb->_cur_xpos, ptb->_cur_ypos + fhh - fah);
+                draw_asc(pc, ptb->text[ptb->cursor], ptb->_cur_xpos, ptb->_cur_ypos + fhh - fah);
             }
             ptb->_cur_xpos += faw;
             ptb->cursor++;
@@ -211,8 +197,7 @@ int magictextbox(void *ctxt, TEXTBOX *ptb)
         ptb->_cur_ypos += fhh + ptb->rowspace;
     }
 
-    if (ptb->_cur_ypos + fhh > ptb->ypos + ptb->height)
-    {
+    if (ptb->_cur_ypos + fhh > ptb->ypos + ptb->height) {
         ptb->_cur_xpos = ptb->xpos;
         ptb->_cur_ypos = ptb->ypos;
         return -1; /* text box full */
@@ -221,10 +206,13 @@ int magictextbox(void *ctxt, TEXTBOX *ptb)
     return 0;
 }
 
-int outtextbox(void *ctxt, TEXTBOX *ptb)
+int printtextbox(void *ctxt, TEXTBOX *ptb, int *steps)
 {
-    int retv;
-    do { retv = magictextbox(ctxt, ptb); } while (!retv);
+    int retv = -1;
+    while (!steps || (*steps)--) {
+        retv = textbox_print_1step(ctxt, ptb);
+        if (retv) break;
+    }
     return retv;
 }
 
@@ -242,7 +230,7 @@ int printtext(void *ctxt, char *txt)
     tb.colspace  = 1;
     tb.text      = txt;
     tb.cursor    = 0;
-    return outtextbox(ctxt, &tb);
+    return printtextbox(ctxt, &tb, NULL);
 }
 
 int outtextxy(void *ctxt, char *txt, int x, int y)
@@ -260,18 +248,18 @@ int outtextxy(void *ctxt, char *txt, int x, int y)
     tb.cursor    = 0;
     tb._cur_xpos = x;
     tb._cur_ypos = y;
-    return outtextbox(ctxt, &tb);
+    return printtextbox(ctxt, &tb, NULL);
 }
-
 
 #else
 /* 包含头文件 */
 #include "win.h"
 #include "font.h"
+#include "draw2d.h"
 
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
 {
-    void *context;
+    void *ctxt;
 
     loadfont(&FONT16);
 
@@ -279,11 +267,13 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     SCREEN.cdepth = 16;
     createbmp(&SCREEN);
 
-    context = paint_begin(&SCREEN);
-    settextfont (context, &FONT16);
-    settextcolor(context, RGB(0, 255, 0));
-    printtext(context, "Hello RGE! 汉字");
-    paint_end(context);
+    ctxt = draw2d_init(&SCREEN);
+    settextfont (ctxt, &FONT16);
+    settextcolor(ctxt, RGB(0, 255, 0));
+    paint_begin (ctxt);
+    printtext   (ctxt, "Hello RGE! \n\n汉字显示\n");
+    paint_done  (ctxt);
+    draw2d_free (ctxt);
 
     RGE_MSG_LOOP();
     destroybmp(&SCREEN);

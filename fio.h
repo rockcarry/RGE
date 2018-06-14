@@ -1,20 +1,18 @@
-#ifndef _FIODRV_H_
-#define _FIODRV_H_
+#ifndef __RGE_FIO_H__
+#define __RGE_FIO_H__
 
 /* 包含头文件 */
 #include "stdefine.h"
 
 /* 公共的 fio context */
-typedef struct
-{
+typedef struct {
     BYTE    bitbuf;
     int     bitflag;
-    BYTE    data[0];
+    BYTE   *data;
 } FIO_CONTEXT;
 
 /* 类型定义 */
-typedef struct
-{
+typedef struct {
     void*  (*open )(const char *url, const char *mode);
     int    (*close)(void *fp);
     int    (*getc )(void *fp);
@@ -25,16 +23,16 @@ typedef struct
     int    (*seek )(void *fp, long offset, int org);
     int    (*eof  )(void *fp);
     int    (*flush)(void *fp);
-} FIODRV; /* file i/o driver */
+} FIO; /* file i/o driver */
 
-extern FIODRV DEF_FIO_DRV;
-extern FIODRV MEM_FIO_DRV;
+extern FIO DEF_FIO;
+extern FIO MEM_FIO;
 
 /* 函数声明 */
-BOOL getbits  (void *fp, FIODRV *drv, DWORD *data, int size);
-BOOL putbits  (void *fp, FIODRV *drv, DWORD  data, int size);
-BOOL flushbits(void *fp, FIODRV *drv, int flag);
-BOOL alignbyte(void *fp, FIODRV *drv);
+BOOL getbits  (void *fp, DWORD *data, int size, FIO *fio);
+BOOL putbits  (void *fp, DWORD  data, int size, FIO *fio);
+BOOL flushbits(void *fp, int flag, FIO *fio);
+BOOL alignbyte(void *fp, FIO *fio);
 
 #endif
 

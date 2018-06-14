@@ -1,5 +1,39 @@
-/* 包含头文件 */
-#include "fnps.h"
+// 包含头文件
+#include "pixel.h"
+
+// 内部函数实现
+/* ++ solid pixel functions ++ */
+static void pixel8bitsolid(BMP *pb, int x, int y, DWORD c)
+{
+    *((BYTE*)(pb->pdata + pb->stride * y) + x) = (BYTE)c;
+}
+
+static void pixel16bitsolid(BMP *pb, int x, int y, DWORD c)
+{
+    *((WORD*)(pb->pdata + pb->stride * y) + x) = (WORD)c;
+}
+
+static void pixel24bitsolid(BMP *pb, int x, int y, DWORD c)
+{
+    BYTE *pdata = pb->pdata + pb->stride * y + x * 3;
+    *pdata++ = (BYTE)(c >> 0 );
+    *pdata++ = (BYTE)(c >> 8 );
+    *pdata++ = (BYTE)(c >> 16);
+}
+
+static void pixel32bitsolid(BMP *pb, int x, int y, DWORD c)
+{
+    *((DWORD*)(pb->pdata + pb->stride * y) + x) = (DWORD)c;
+}
+/* -- solid pixel functions -- */
+
+PFNPIXEL TABFN_PIXEL_SOLID[] =
+{
+    pixel8bitsolid,
+    pixel16bitsolid,
+    pixel24bitsolid,
+    pixel32bitsolid,
+};
 
 /* ++ alpha pixel functions ++ */
 static void pixel8bitalpha(BMP *pb, int x, int y, DWORD c)
@@ -29,9 +63,9 @@ static void pixel24bitalpha(BMP *pb, int x, int y, DWORD c)
     DWORD r     = (c >> 16) & 0xff;
     DWORD g     = (c >> 8 ) & 0xff;
     DWORD b     = (c >> 0 ) & 0xff;
-    pbyte[0] = pbyte[0] + alpha * (b - pbyte[0]) / 256;
-    pbyte[1] = pbyte[1] + alpha * (g - pbyte[1]) / 256;
-    pbyte[2] = pbyte[2] + alpha * (r - pbyte[2]) / 256;
+    pbyte[0] = (BYTE)(pbyte[0] + alpha * (b - pbyte[0]) / 256);
+    pbyte[1] = (BYTE)(pbyte[1] + alpha * (g - pbyte[1]) / 256);
+    pbyte[2] = (BYTE)(pbyte[2] + alpha * (r - pbyte[2]) / 256);
 }
 
 static void pixel32bitalpha(BMP *pb, int x, int y, DWORD c)
@@ -50,8 +84,9 @@ static void pixel32bitalpha(BMP *pb, int x, int y, DWORD c)
 
 PFNPIXEL TABFN_PIXEL_ALPHA[] =
 {
-    [1] = pixel8bitalpha,
-    [2] = pixel16bitalpha,
-    [3] = pixel24bitalpha,
-    [4] = pixel32bitalpha,
+    pixel8bitalpha,
+    pixel16bitalpha,
+    pixel24bitalpha,
+    pixel32bitalpha,
 };
+
