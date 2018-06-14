@@ -1,7 +1,8 @@
-bezier
-floodfill
 line width style
 反走样
 stretchblt
 rotateblt
 渐变色填充
+图案填充
+256 色抖动
+
