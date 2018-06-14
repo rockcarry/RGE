@@ -7,10 +7,10 @@
 // 常量定义
 /* fill style */
 enum {
-    FS_NONE           = (1 << 31),
-    FS_AUTO_LOCK      = (1 << 30),
-    FS_BAR_SOLID      = (1 << 1 ),
-    FS_BAR_ALPHA      = (1 << 2 ),
+    FS_AUTO_LOCK      = (1 << 31),
+    FS_NONE           = (1 << 0 ),
+    FS_SOLID          = (1 << 1 ),
+    FS_ALPHA          = (1 << 2 ),
     FS_BMP_COPY       = (1 << 3 ),
     FS_BMP_MASK       = (1 << 4 ),
     FS_BMP_ALPHA      = (1 << 5 ),

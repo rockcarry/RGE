@@ -8,9 +8,9 @@ void select_scanline_color(BMP *dstpb, BMP *srcpb, int style, PFNSCANLINE *pfn, 
     int cdepthdst = dstpb ? dstpb->cdepth : 8;
     int cdepthsrc = srcpb ? srcpb->cdepth : 8;
 
-    if (style & FS_BAR_SOLID) {
+    if (style & FS_SOLID) {
         *pfn = TABFN_SCANLINEBAR_SOLID[cdepthdst/8-1];
-    } else if (style & FS_BAR_ALPHA) {
+    } else if (style & FS_ALPHA) {
         *pfn = TABFN_SCANLINEBAR_ALPHA[cdepthdst/8-1];
     } else if (cdepthdst == 8 && cdepthdst == cdepthsrc && (style & FS_256_PALMAPDST)) {
         *pfn = PFN_SCANLINE_PALMAP_DST;

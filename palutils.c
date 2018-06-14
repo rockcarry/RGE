@@ -190,8 +190,8 @@ LRESULT CALLBACK MyWndProc(
     case WM_KEYDOWN:
         switch (counter) {
         case 0:
-            putbmp(&SCREEN, 0 , 20, &mybmp1, FS_BAR_SOLID, 0, 0, NULL);
-            putbmp(&SCREEN, 60, 60, &mybmp1, FS_BAR_SOLID, 0, 0, NULL);
+            putbmp(&SCREEN, 0 , 20, &mybmp1, FS_SOLID, 0, 0, NULL);
+            putbmp(&SCREEN, 60, 60, &mybmp1, FS_SOLID, 0, 0, NULL);
             setbmppal(&SCREEN, 0, 256, mybmp1.ppal);
             putbmp(&SCREEN, 0, 20, &mybmp1, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
             break;

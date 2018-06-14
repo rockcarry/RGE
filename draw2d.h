@@ -50,10 +50,10 @@ void rectangle(void *ctxt, int x1, int y1, int x2, int y2); // ¾ØĞÎ
 void roundrect(void *ctxt, int x1, int y1, int x2, int y2, int a, int b); // Ô²½Ç¾ØĞÎ
 void circle   (void *ctxt, int xo, int yo, int r);          // Ô²
 void ellipse  (void *ctxt, int xo, int yo, int a, int b);   // ÍÖÔ²
-void arc      (void *ctxt, int xo, int yo, int a, int b, int s, int e);   // Ô²»¡
-void polygon  (void *ctxt, int *pp, int n);                 // ¶à±ßĞÎ
-void floodfill(void *ctxt, int x, int y);                   // ·ºÀÄÊ½Ìî³ä 
-void bezier   (void *ctxt, int *pp, int degree);            // ±´Èû¶ûÇúÏß
+BOOL arc      (void *ctxt, int xo, int yo, int a, int b, int s, int e);   // Ô²»¡
+BOOL polygon  (void *ctxt, int *pp, int n);                 // ¶à±ßĞÎ
+BOOL floodfill(void *ctxt, int x, int y);                   // ·ºÀÄÊ½Ìî³ä
+BOOL bezier   (void *ctxt, int *pp, int degree, int pd);    // ±´Èû¶ûÇúÏß
 
 #endif
 

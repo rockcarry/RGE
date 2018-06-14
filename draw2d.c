@@ -511,7 +511,7 @@ void ellipse(void *ctxt, int xo, int yo, int a, int b)
     roundrect(ctxt, xo, yo, xo, yo, a, b);
 }
 
-void arc(void *ctxt, int xo, int yo, int a, int b, int start, int end)
+BOOL arc(void *ctxt, int xo, int yo, int a, int b, int start, int end)
 {
     DRAWCONTEXT *pc    = (DRAWCONTEXT*)ctxt;
     float        pd    = 1.0f;
@@ -520,8 +520,9 @@ void arc(void *ctxt, int xo, int yo, int a, int b, int start, int end)
     int          ppsize= (int)(M_PI / 180 * (end - start) / fstep) + 2;
     int         *ppbuf = malloc(2 * ppsize * sizeof(int));
     int          ppcur = 0;
+    BOOL         ret;
 
-    if (!ppbuf) return;
+    if (!ppbuf) return FALSE;
     if (pc->drawflags & DF_ARC_CENTER_POINT) {
         ppbuf[ppcur++] = xo;
         ppbuf[ppcur++] = yo;
@@ -532,8 +533,9 @@ void arc(void *ctxt, int xo, int yo, int a, int b, int start, int end)
         ppbuf[ppcur++] = (int)(yo + b * sin(ft) + 0.5f);
     }
 
-    polygon(ctxt, ppbuf, ppcur / 2);
+    ret = polygon(ctxt, ppbuf, ppcur / 2);
     free(ppbuf);
+    return ret;
 }
 
 typedef struct tagNODE {
@@ -543,12 +545,13 @@ typedef struct tagNODE {
     struct tagNODE *next;
 } NODE, *PNODE;
 
-void polygon(void *ctxt, int *pp, int n)
+BOOL polygon(void *ctxt, int *pp, int n)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
 
     PNODE *NET = NULL;
     PNODE  AET = NULL;
+    BOOL   ret = FALSE;
     BOOL   flag;
     NODE  *pnew;
     NODE  *ptemp;
@@ -566,7 +569,7 @@ void polygon(void *ctxt, int *pp, int n)
         if (pc->drawflags & DF_POLYGON_CLOSED) {
             line(ctxt, pp[0], pp[1], pp[(n-1)*2], pp[(n-1)*2+1]);
         }
-        return;
+        return TRUE;
     }
     //-- 绘制非填充多边形 --//
 
@@ -655,6 +658,7 @@ void polygon(void *ctxt, int *pp, int n)
             ptemp = ptemp ->next;
         }
     }
+    ret = TRUE;
 
 error_handler:
     /* 释放内存 */
@@ -674,16 +678,162 @@ error_handler:
 
     /* 在纵坐标方向对多边形进行平移变换 */
     for (i=0; i<n; i++) pp[i * 2 + 1] += pgminy;
+    return ret;
 }
 
-void floodfill(void *ctxt, int x, int y)
+BOOL floodfill(void *ctxt, int x, int y)
 {
-    // todo..
+    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
+    BMP         *pb = pc->dstbmp;
+    DWORD bkcolor;
+    BOOL  flag;
+    BOOL  done;
+    int   rx, lx, tx, ty;
+    int  *stack = malloc(DRAW2D_STACK_SIZE * sizeof(int));
+    int   top   = 0;
+    BOOL  ret   = FALSE;
+
+    /* check */
+    if (!stack) return FALSE;
+
+    /* get background color */
+    bkcolor = getpixel(ctxt, x, y);
+
+    /* push seed pixel to stack */
+    if (top >= DRAW2D_STACK_SIZE) goto error_handler;
+    stack[top++] = x;
+    if (top >= DRAW2D_STACK_SIZE) goto error_handler;
+    stack[top++] = y;
+
+    while (top > 0) {
+        /* pop up a pixel from stack */
+        ty = stack[--top];
+        tx = stack[--top];
+
+        /* find the right pixel */
+        x  = tx;
+        y  = ty;
+        while (1) {
+            if (getpixel(ctxt, x, y) != bkcolor || x >= pb->width) break;
+            x++;
+        }
+        rx = x - 1;
+
+        /* find the left pixel */
+        x  = tx - 1;
+        y  = ty;
+        while (1) {
+            if (getpixel(ctxt, x, y) != bkcolor || x < 0) break;
+            x--;
+        }
+        lx = x + 1;
+
+        /* fast scan line fill */
+        scanline(ctxt, y, lx, rx);
+
+        /* done flag used for recheck scan line*/
+        done = FALSE;
+
+check_scan_line:
+        /* check upper and lower scanline */
+        if (done) y = ty - 1;
+        else y = ty + 1;
+        if (y >= 0 && y < pb->height) {
+            flag = FALSE;
+            for (x=lx; x<=rx; x++) {
+                if (!flag && getpixel(ctxt, x, y) == bkcolor) flag = TRUE;
+                else if (flag && getpixel(ctxt, x, y) != bkcolor) {
+                    /* push this pixel (x - 1, y) to stack */
+                    if (top >= DRAW2D_STACK_SIZE) goto error_handler;
+                    stack[top++] = x - 1;
+                    if (top >= DRAW2D_STACK_SIZE) goto error_handler;
+                    stack[top++] = y;
+                    flag = FALSE;
+                }
+            }
+            if (flag) {
+                /* push this pixel (x - 1, y) to stack */
+                if (top >= DRAW2D_STACK_SIZE) goto error_handler;
+                stack[top++] = x - 1;
+                if (top >= DRAW2D_STACK_SIZE) goto error_handler;
+                stack[top++] = y;
+            }
+        }
+
+        if (!done) {
+            done = TRUE;
+            goto check_scan_line;
+        }
+    }
+    ret = TRUE;
+
+error_handler:
+    if (stack) free(stack);
+    return ret;
 }
 
-void bezier(void *ctxt, int *pp, int degree)
+BOOL bezier(void *ctxt, int *pp, int degree, int pd)
 {
-    // todo..
+    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
+    int *oldpoint;
+    int *newpoint;
+    int *stack = malloc(DRAW2D_STACK_SIZE * sizeof(int));
+    int  top   = 0;
+    int  i, j;
+    BOOL ret = FALSE;
+
+    /* 参数检查 */
+    if (!stack || degree <= 0 || pd <= 0) {
+        goto error_handler;
+    }
+
+    /* init stack */
+    stack = malloc(DRAW2D_STACK_SIZE * sizeof(int));
+    top   = 0;
+    degree--;
+
+    /* draw two end points of poly-bezier */
+    putpixel(ctxt, pp[0 * 2 + 0]     , pp[0 * 2 + 1]     , pc->drawcolor);
+    putpixel(ctxt, pp[degree * 2 + 0], pp[degree * 2 + 1], pc->drawcolor);
+
+    /* push the first polygon to draw2dstack */
+    for (i=0; i<=degree; i++) {
+        if (top >= DRAW2D_STACK_SIZE) goto error_handler;
+        stack[top++] = pp[i * 2 + 0] << 4;
+        if (top >= DRAW2D_STACK_SIZE) goto error_handler;
+        stack[top++] = pp[i * 2 + 1] << 4;
+    }
+
+    while (top > 0) {
+        newpoint = &(stack[top]);
+        oldpoint = newpoint - (degree + 1) * 2;
+        if (abs(oldpoint[0 * 2 + 0] - oldpoint[degree * 2 + 0]) +
+            abs(oldpoint[0 * 2 + 1] - oldpoint[degree * 2 + 1]) <= (pd << 4))
+        {
+            top -= (degree + 1) * 2;  /* pop up the old polygon from draw2dstack */
+        } else {
+            /* push new polygon to draw2dstack */
+            top += (degree + 1) * 2;
+            if (top >= DRAW2D_STACK_SIZE) goto error_handler;
+
+            newpoint[0 * 2 + 0] = oldpoint[0 * 2 + 0];
+            newpoint[0 * 2 + 1] = oldpoint[0 * 2 + 1];
+            for (i=1; i<=degree; i++) {
+                for (j=0; j<=degree-i; j++) {
+                    oldpoint[j * 2 + 0] = (oldpoint[j * 2 + 0] + oldpoint[(j + 1) * 2 + 0]) / 2;
+                    oldpoint[j * 2 + 1] = (oldpoint[j * 2 + 1] + oldpoint[(j + 1) * 2 + 1]) / 2;
+                }
+                newpoint[i * 2 + 0] = oldpoint[0 * 2 + 0];
+                newpoint[i * 2 + 1] = oldpoint[0 * 2 + 1];
+            }
+            putpixel(ctxt, oldpoint[0 * 2 + 0] >> 4, oldpoint[0 * 2 + 1] >> 4, pc->drawcolor);
+        }
+    }
+    ret = TRUE;
+
+error_handler:
+    if (stack) free(stack);
+    return ret;
 }
 
 #else
@@ -695,6 +845,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
 {
     void *context;
     BMP   me = {0};
+    int pp[] = {12, 32, 233, 333, 233, 333, 500, 400, 570, 123};
 
     RGE_WIN_INIT(hInst);
     SCREEN.cdepth = 32;
@@ -704,7 +855,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     context = draw2d_init(&SCREEN);
     paint_begin(context);
 
-    setfillstyle(context, FS_BAR_ALPHA);
+    setfillstyle(context, FS_ALPHA);
     setfillcolor(context, RGB888(0, 0, 255));
     setdrawcolor(context, RGB888(255, 255, 255));
     setdrawalpha(context, 180);
@@ -726,6 +877,12 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     setfillstyle(context, FS_BMP_COPY);
     setfillbmp(context, &me);
     circle(context, 320, 240, 100);
+    floodfill(context, 100, 100);
+
+    setfillstyle(context, FS_ALPHA);
+    setfillcolor(context, RGB888(0, 255, 0));
+    polygon(context, pp, sizeof(pp) / sizeof(int) / 2);
+    bezier (context, pp, sizeof(pp) / sizeof(int) / 2, 1);
 
     paint_done(context);
     draw2d_free(context);
