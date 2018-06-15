@@ -2,9 +2,9 @@
 
 /* 包含头文件 */
 #include <stdio.h>
-#include "gif.h"
-#include "lzw.h"
 #include "log.h"
+#include "lzw.h"
+#include "gif.h"
 
 // ++ gif fio context & driver ++ //
 typedef struct {

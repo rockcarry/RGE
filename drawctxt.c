@@ -1,6 +1,5 @@
 /* 包含头文件 */
-#include "scanl.h"
-#include "bitblt.h"
+#include "scanline.h"
 
 /* 函数实现 */
 void select_scanline_color(BMP *dstpb, BMP *srcpb, int style, PFNSCANLINE *pfn, DWORD *color)

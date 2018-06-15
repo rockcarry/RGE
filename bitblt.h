@@ -2,7 +2,7 @@
 #define __RGE_BITBLT_H__
 
 /* 包含头文件 */
-#include "scanl.h"
+#include "scanline.h"
 
 /* bitblt mask color
    0xffffffff - default mask color, first pixel color in source bitmap will used.

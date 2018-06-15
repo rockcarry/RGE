@@ -2,8 +2,6 @@
 
 /* 包含头文件 */
 #include <math.h>
-#include "pixel.h"
-#include "scanl.h"
 #include "drawctxt.h"
 #include "draw2d.h"
 

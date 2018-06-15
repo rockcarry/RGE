@@ -17,7 +17,10 @@ OBJS = \
     gif.o \
     win.o \
     pixel.o \
-    scanl.o \
+    scanline-basic.o   \
+    scanline-convert.o \
+    scanline-alpha.o   \
+    scanline-palmap.o  \
     font.o \
     bitblt.o \
     draw2d.o \
