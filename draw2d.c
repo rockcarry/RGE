@@ -24,7 +24,6 @@ void* draw2d_init(BMP *pb)
     pc->dstbmp               = pb;
     pc->drawcolor            = RGB888(255, 255, 255);
     pc->linestyle            = LS_SOLID;
-    pc->maskcolor            = (DWORD)-1;
     pc->textcolor            = RGB888(255, 255, 255);
     pc->pixelsolid           = TABFN_PIXEL_SOLID          [pb->cdepth / 8 - 1];
     pc->pixelalpha           = TABFN_PIXEL_ALPHA          [pb->cdepth / 8 - 1];
@@ -39,8 +38,8 @@ void* draw2d_init(BMP *pb)
     pc->scanlinepalmapsrc    = PFN_SCANLINE_PALMAP_SRC;
 
     // pixel & scanline
-    pc->pixel                = pc->pixelsolid;
-    pc->scanline             = pc->scanlinebarsolid;
+    pc->pixel    = pc->pixelsolid;
+    pc->scanline = pc->scanlinebarsolid;
 
     return pc;
 }
@@ -116,35 +115,48 @@ void setfillstyle(void *ctxt, DWORD style)
     BMP         *srcpb = pc->fillparams.srcbmp;
 
     pc->fillparams.style = style;
-    select_scanline_color(dstpb, srcpb, style, &pc->scanline, &pc->fillparams.maskc);
+    select_scanline_func(dstpb, srcpb, style, &pc->scanline);
 }
 
 void setfillcolor(void *ctxt, DWORD color)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
     pc->fillparams.fillc = COLOR_CONVERT(pc->dstbmp->cdepth, color, TRUE);
-    setfillstyle(ctxt, pc->fillparams.style);
+}
+
+void setfillpattern(void *ctxt, DWORD *pattern)
+{
+    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
+    pc->fillparams.pattern = pattern;
 }
 
 void setfillbmp(void *ctxt, BMP *bmp)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
     pc->fillparams.srcbmp = bmp;
-    setfillstyle(ctxt, pc->fillparams.style);
 }
 
-void setfillorgxy(void *ctxt, int x, int y)
+void setfillsrcxy(void *ctxt, int x, int y)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
-    pc->fillorgx = x;
-    pc->fillorgy = y;
+    pc->fillparams.fillsrcx = x;
+    pc->fillparams.fillsrcy = y;
 }
 
 void setmaskcolor(void *ctxt, DWORD color)
 {
-    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
-    pc->fillparams.maskc = color; // no need to convert
-    setfillstyle(ctxt, pc->fillparams.style);
+    DRAWCONTEXT *pc     = (DRAWCONTEXT*)ctxt;
+    BMP         *srcbmp = pc->fillparams.srcbmp;
+    if (color == -1 && srcbmp) {
+        switch (srcbmp->cdepth) {
+        case 8 : color = *(BYTE *)srcbmp->pdata; break;
+        case 16: color = *(WORD *)srcbmp->pdata; break;
+        case 24: color = *(DWORD*)srcbmp->pdata; break;
+        case 32: color = *(DWORD*)srcbmp->pdata; break;
+        }
+        if (srcbmp->cdepth == 24) color &= 0xffffff;
+    }
+    pc->fillparams.maskc = color;
 }
 
 void setpalmaptab(void *ctxt, BYTE *palmap)
@@ -194,12 +206,14 @@ static __inline void scanline(DRAWCONTEXT *ctxt, int y, int x1, int x2)
     int   srcy;
     void *srcp  = NULL;
     if (srcpb) {
-        srcx = (x1 + ctxt->fillorgx) % srcpb->width;
-        srcy = (y  + ctxt->fillorgy) % srcpb->height;
+        srcx = (x1 + ctxt->fillparams.fillsrcx) % srcpb->width;
+        srcy = (y  + ctxt->fillparams.fillsrcy) % srcpb->height;
         ctxt->fillparams.start = (BYTE*)srcpb->pdata + srcy * srcpb->stride;
         ctxt->fillparams.end   = (BYTE*)ctxt->fillparams.start + (srcpb->cdepth / 8) * srcpb->width;
         srcp                   = (BYTE*)ctxt->fillparams.start + (srcpb->cdepth / 8) * srcx;
     }
+    ctxt->fillparams.filldstx = x1;
+    ctxt->fillparams.filldsty = y ;
     ctxt->scanline(dstp, srcp, x2 - x1 + 1, &ctxt->fillparams);
 }
 
@@ -844,6 +858,10 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     void *context;
     BMP   me = {0};
     int pp[] = {12, 32, 233, 333, 233, 333, 500, 400, 570, 123};
+    DWORD pattern[32] = { 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
+                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
+                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
+                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555 };
 
     RGE_WIN_INIT(hInst);
     SCREEN.cdepth = 32;
@@ -877,8 +895,10 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     circle(context, 320, 240, 100);
     floodfill(context, 100, 100);
 
-    setfillstyle(context, FS_ALPHA);
-    setfillcolor(context, RGB888(0, 255, 0));
+//  setfillstyle(context, FS_ALPHA);
+//  setfillcolor(context, RGB888(0, 255, 0));
+    setfillstyle(context, FS_PATTERN);
+    setfillpattern(context, pattern);
     polygon(context, pp, sizeof(pp) / sizeof(int) / 2);
     bezier (context, pp, sizeof(pp) / sizeof(int) / 2, 1);
 

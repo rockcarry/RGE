@@ -49,7 +49,7 @@ static BOOL bltclip(BMP *dstpb, int *dstx, int *dsty,
 /* º¯ÊýÊµÏÖ */
 void bitblt(BMP *dstpb, int dstx, int dsty,
             BMP *srcpb, int srcx, int srcy, int srcw, int srch,
-            int style, int color, int alpha, BYTE *palmap)
+            int style, int color, int alpha, void *data)
 {
     SCANLINEPARAMS params = {0};
     PFNSCANLINE    scanline;
@@ -59,13 +59,28 @@ void bitblt(BMP *dstpb, int dstx, int dsty,
     if (srch == -1) srch = srcpb->height;
     if (!bltclip(dstpb, &dstx, &dsty, srcpb, &srcx, &srcy, &srcw, &srch)) return;
 
-    params.srcbmp= srcpb;
-    params.style = style;
-    params.fillc = COLOR_CONVERT(dstpb->cdepth, color, TRUE);
-    params.maskc = color;
-    params.alpha = alpha;
-    params.palmap= palmap;
-    select_scanline_color(dstpb, srcpb, style, &scanline, &params.maskc);
+    params.srcbmp   = srcpb;
+    params.style    = style;
+    params.maskc    = color;
+    params.alpha    = alpha;
+    params.palmap   = data;
+    params.pattern  = data;
+    params.filldstx = dstx;
+    params.filldsty = dsty;
+    select_scanline_func(dstpb, srcpb, style, &scanline);
+
+    if ((style & FS_BMP_MASK) != 0 && color == -1 && srcpb) {
+        switch (srcpb->cdepth) {
+        case 8 : color = *(BYTE *)srcpb->pdata; break;
+        case 16: color = *(WORD *)srcpb->pdata; break;
+        case 24: color = *(DWORD*)srcpb->pdata; break;
+        case 32: color = *(DWORD*)srcpb->pdata; break;
+        }
+        if (srcpb->cdepth == 24) color &= 0xffffff;
+    } else {
+        color = COLOR_CONVERT(dstpb->cdepth, color, TRUE);
+    }
+    params.fillc = color;
 
     if (style & FS_AUTO_LOCK) lockbmp(dstpb);
     dstp = (BYTE*)dstpb->pdata + dsty * dstpb->stride + dstx * (dstpb->cdepth / 8);
@@ -74,6 +89,8 @@ void bitblt(BMP *dstpb, int dstx, int dsty,
         scanline(dstp, srcp, srcw, &params);
         dstp += dstpb->stride;
         srcp += srcpb->stride;
+        params.filldstx = dstx;
+        params.filldsty+= 1;
     }
     if (dstpb->cdepth == 8 && (style & FS_256_COPYPAL)) {
         setbmppal(dstpb, 0, 256, srcpb->ppal);
@@ -88,6 +105,10 @@ void bitblt(BMP *dstpb, int dstx, int dsty,
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
 {
     BMP mybmp  = {0};
+    DWORD pattern[32] = { 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
+                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
+                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
+                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555 };
 
     if (*lpszCmdLine == 0) {
         lpszCmdLine = "res/boy332.bmp";
@@ -102,6 +123,8 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
            (SCREEN.width  - mybmp.width ) / 2,
            (SCREEN.height - mybmp.height) / 2,
            &mybmp, FS_AUTO_LOCK|FS_BMP_MASK|FS_BMP_ALPHA, -1, 128, NULL);
+
+    putbmp(&SCREEN, 0, 0, &mybmp, FS_AUTO_LOCK|FS_PATTERN, RGB888(0,255,0), 0, pattern);
 
     RGE_MSG_LOOP();
     destroybmp(&mybmp);

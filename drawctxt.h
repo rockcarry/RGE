@@ -21,9 +21,6 @@ typedef struct {
     DWORD linestyle;   /* line style */
 
     /* ++ for fillpolygon or bitblt ++ */
-    int   fillorgx;    /* fill org x */
-    int   fillorgy;    /* fill org y */
-    DWORD maskcolor;   /* mask color */
     SCANLINEPARAMS fillparams;
     /* -- for fillpolygon or bitblt -- */
     
@@ -46,6 +43,6 @@ typedef struct {
     PFNSCANLINE scanline;
 } DRAWCONTEXT;
 
-void select_scanline_color(BMP *dstpb, BMP *srcpb, int style, PFNSCANLINE *pfn, DWORD *color);
+void select_scanline_func(BMP *dstpb, BMP *srcpb, int style, PFNSCANLINE *pfn);
 
 #endif

@@ -41,6 +41,64 @@ PFNSCANLINE TABFN_SCANLINEBAR_SOLID[] =
     scanline32bitsolid,
 };
 
+static void scanline_8bitpattern(void *dst, void *src, int w, SCANLINEPARAMS *params)
+{
+    BYTE *dstbyte = (BYTE*)dst;
+    DWORD patline = params->pattern[(params->fillsrcy + params->filldsty) % 32];
+    while (w--) {
+        if (patline & (1 << ((params->fillsrcx + params->filldstx++) % 32))) {
+            *dstbyte = (BYTE)params->fillc;
+        }
+        dstbyte++;
+    }
+}
+
+static void scanline16bitpattern(void *dst, void *src, int w, SCANLINEPARAMS *params)
+{
+    WORD *dstword = (WORD*)dst;
+    DWORD patline = params->pattern[(params->fillsrcy + params->filldsty) % 32];
+    while (w--) {
+        if (patline & (1 << ((params->fillsrcx + params->filldstx++) % 32))) {
+            *dstword = (WORD)params->fillc;
+        }
+        dstword++;
+    }
+}
+
+static void scanline24bitpattern(void *dst, void *src, int w, SCANLINEPARAMS *params)
+{
+    BYTE *dstbyte = (BYTE*)dst;
+    DWORD patline = params->pattern[(params->fillsrcy + params->filldsty) % 32];
+    while (w--) {
+        if (patline & (1 << ((params->fillsrcx + params->filldstx++) % 32))) {
+            dstbyte[0] = (BYTE)(params->fillc >> 0 );
+            dstbyte[1] = (BYTE)(params->fillc >> 8 );
+            dstbyte[2] = (BYTE)(params->fillc >> 16);
+        }
+        dstbyte += 3;
+    }
+}
+
+static void scanline32bitpattern(void *dst, void *src, int w, SCANLINEPARAMS *params)
+{
+    DWORD *dstdword = (DWORD*)dst;
+    DWORD  patline  = params->pattern[(params->fillsrcy + params->filldsty) % 32];
+    while (w--) {
+        if (patline & (1 << ((params->fillsrcx + params->filldstx++) % 32))) {
+            *dstdword = params->fillc;
+        }
+        dstdword++;
+    }
+}
+
+PFNSCANLINE TABFN_SCANLINEBAR_PATTERN[] =
+{
+    scanline_8bitpattern,
+    scanline16bitpattern,
+    scanline24bitpattern,
+    scanline32bitpattern,
+};
+
 static void scanline_8bitalpha(void *dst, void *src, int w, SCANLINEPARAMS *params)
 {
     BYTE *pbyte = (BYTE*)dst;
