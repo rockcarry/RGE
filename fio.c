@@ -165,7 +165,7 @@ static void* _mem_fio_open(const char *pbuf, const char *length)
     ctxt->length = (long )length;
 
     if (!ctxt->pdata) {
-        ctxt->pdata = malloc(ctxt->length);
+        ctxt->pdata = malloc((size_t)ctxt->length);
         ctxt->openflag = 1;
     } else ctxt->openflag = 0;
 
@@ -198,7 +198,7 @@ static int _mem_fio_getc(void *fp)
     if (ctxt) {
         if (ctxt->pdata) {
             if (ctxt->curpos < ctxt->length) {
-                retv = ctxt->pdata[ctxt->curpos++];
+                retv = ctxt->pdata[(size_t)ctxt->curpos++];
             }
         }
     }
@@ -213,7 +213,7 @@ static int _mem_fio_putc(int c, void *fp)
     if (ctxt) {
         if (ctxt->pdata) {
             if (ctxt->curpos < ctxt->length) {
-                ctxt->pdata[ctxt->curpos++] = (BYTE)c;
+                ctxt->pdata[(size_t)ctxt->curpos++] = (BYTE)c;
                 retv = (BYTE)c;
             }
         }
@@ -231,9 +231,9 @@ static size_t _mem_fio_read(void *buf, size_t size, size_t count, void *fp)
     if (ctxt) {
         if (ctxt->pdata) {
             num = total < ctxt->length - ctxt->curpos ? total : ctxt->length - ctxt->curpos;
-            memcpy(buf, ctxt->pdata + ctxt->curpos, num);
+            memcpy(buf, ctxt->pdata + (size_t)ctxt->curpos, (size_t)num);
             ctxt->curpos += num;
-            retv = num / size;
+            retv = (size_t)(num / size);
         }
     }
     return retv;
@@ -249,9 +249,9 @@ static size_t _mem_fio_write(const void *buf, size_t size, size_t count, void *f
     if (ctxt) {
         if (ctxt->pdata) {
             num = total < ctxt->length - ctxt->curpos ? total : ctxt->length - ctxt->curpos;
-            memcpy(ctxt->pdata + ctxt->curpos, buf, num);
+            memcpy(ctxt->pdata + (size_t)ctxt->curpos, buf, (size_t)num);
             ctxt->curpos += num;
-            retv = num / size;
+            retv = (size_t)(num / size);
         }
     }
     return retv;
@@ -391,7 +391,7 @@ BOOL putbits(void *fp, DWORD data, int size, FIO *fio)
     }
 
     while (size >= 8) {
-        if (EOF == (fio->putc)(data, fp)) return FALSE;
+        if (EOF == (fio->putc)((int)data, fp)) return FALSE;
         data >>= 8;
         size  -= 8;
     }
@@ -408,7 +408,7 @@ BOOL flushbits(void *fp, int flag, FIO *fio)
 
     if (!ctxt->bitflag) return TRUE;
 
-    if (flag) fill = 0xffffffff;
+    if (flag) fill = 0xffffffffL;
     else      fill = 0;
 
     if (!putbits(fp, fill, 8 - ctxt->bitflag, fio)) return FALSE;

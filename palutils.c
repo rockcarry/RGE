@@ -21,10 +21,10 @@ void palutils_alpha_palmap(BYTE *palmap, BYTE *pal, DWORD color)
     int rr, rg, rb;
     int a, i;
 
-    a  = (color >> 24) & 0xff;
-    fr = (color >> 16) & 0xff;
-    fg = (color >> 8 ) & 0xff;
-    fb = (color >> 0 ) & 0xff;
+    a  = (BYTE)(color >> 24);
+    fr = (BYTE)(color >> 16);
+    fg = (BYTE)(color >> 8 );
+    fb = (BYTE)(color >> 0 );
 
     for (i=0; i<256; i++) {
         br = pal[i * 4 + 2];
@@ -91,11 +91,11 @@ void palutils_matchpal(BMP *pb1, BMP *pb2)
     black1 = PALRGB(pb1->ppal, 0, 0, 0);
     black2 = PALRGB(pb2->ppal, 0, 0, 0);
     if (colors[black1].freq > colors[black2 + 256].freq) {
-        colors[black1 + 0  ].freq = 0x3fffffff; /* 不能使用 0x7fffffff */
-        colors[black1 + 256].freq = 0;          /* 否则在下一步合并重复颜色时会溢出 */
+        colors[black1 + 0  ].freq = 0x3fffffffL; /* 不能使用 0x7fffffff */
+        colors[black1 + 256].freq = 0;           /* 否则在下一步合并重复颜色时会溢出 */
     } else {
         colors[black1 + 0  ].freq = 0;
-        colors[black2 + 256].freq = 0x3fffffff;
+        colors[black2 + 256].freq = 0x3fffffffL;
     }
 
     /* 合并重复颜色 */

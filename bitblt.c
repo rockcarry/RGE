@@ -49,7 +49,7 @@ static BOOL bltclip(BMP *dstpb, int *dstx, int *dsty,
 /* º¯ÊýÊµÏÖ */
 void bitblt(BMP *dstpb, int dstx, int dsty,
             BMP *srcpb, int srcx, int srcy, int srcw, int srch,
-            int style, int color, int alpha, void *data)
+            int style, DWORD color, int alpha, void *data)
 {
     SCANLINEPARAMS params = {0};
     PFNSCANLINE    scanline;
@@ -76,7 +76,7 @@ void bitblt(BMP *dstpb, int dstx, int dsty,
         case 24: color = *(DWORD*)srcpb->pdata; break;
         case 32: color = *(DWORD*)srcpb->pdata; break;
         }
-        if (srcpb->cdepth == 24) color &= 0xffffff;
+        if (srcpb->cdepth == 24) color &= 0xffffffL;
     } else {
         color = COLOR_CONVERT(dstpb->cdepth, color, TRUE);
     }

@@ -7,6 +7,7 @@ static void scanlinepalmapdst(void *dst, void *src, int w, SCANLINEPARAMS *param
 {
     BYTE *palmap  = params->palmap;
     BYTE *dstbyte = (BYTE*)dst;
+    DO_USE_VAR(src);
     while (w--) {
         *dstbyte = palmap[*dstbyte];
          dstbyte++;
@@ -26,7 +27,13 @@ static void scanlinepalmapsrc(void *dst, void *src, int w, SCANLINEPARAMS *param
     }
 }
 
-static void scanlinenone(void *dst, void *src, int w, SCANLINEPARAMS *params) {}
+static void scanlinenone(void *dst, void *src, int w, SCANLINEPARAMS *params)
+{
+    DO_USE_VAR(dst);
+    DO_USE_VAR(src);
+    DO_USE_VAR(w  );
+    DO_USE_VAR(params);
+}
 
 PFNSCANLINE PFN_SCANLINE_PALMAP_DST = scanlinepalmapdst;
 PFNSCANLINE PFN_SCANLINE_PALMAP_SRC = scanlinepalmapsrc;

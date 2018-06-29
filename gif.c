@@ -1,7 +1,7 @@
 #ifndef _TEST_
 
 /* 包含头文件 */
-#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "log.h"
 #include "lzw.h"

@@ -35,7 +35,7 @@ void setdrawflags  (void *ctxt, DWORD  flags  );
 void setantialias  (void *ctxt, int    antia  );
 void setlinestyle  (void *ctxt, DWORD  style  );
 void setlinewidth  (void *ctxt, int    width  );
-void setfillstyle  (void *ctxt, DWORD  style  );
+void setfillstyle  (void *ctxt, int    style  );
 void setfillcolor  (void *ctxt, DWORD  color  );
 void setfillpattern(void *ctxt, DWORD *pattern);
 void setfillbmp    (void *ctxt, BMP   *bmp    );

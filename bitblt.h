@@ -12,7 +12,7 @@
 /* º¯ÊýÉùÃ÷ */
 void bitblt(BMP *dstpb, int dstx, int dsty,
             BMP *srcpb, int srcx, int srcy, int srcw, int srch,
-            int style, int color, int alpha, void *data);
+            int style, DWORD color, int alpha, void *data);
             
 #endif
 

@@ -1,6 +1,7 @@
 #ifndef _TEST_
 
 /* 包含头文件 */
+#include <stdlib.h>
 #include "drawctxt.h"
 #include "font.h"
 

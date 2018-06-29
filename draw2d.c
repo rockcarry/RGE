@@ -110,7 +110,7 @@ void setlinewidth(void *ctxt, int width)
     pc->linewidth = width;
 }
 
-void setfillstyle(void *ctxt, DWORD style)
+void setfillstyle(void *ctxt, int style)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
     BMP         *dstpb = pc->dstbmp;
@@ -156,7 +156,7 @@ void setmaskcolor(void *ctxt, DWORD color)
         case 24: color = *(DWORD*)srcbmp->pdata; break;
         case 32: color = *(DWORD*)srcbmp->pdata; break;
         }
-        if (srcbmp->cdepth == 24) color &= 0xffffff;
+        if (srcbmp->cdepth == 24) color &= 0xffffffL;
     }
     pc->fillparams.maskc = color;
 }
@@ -316,7 +316,8 @@ void roundrect(void *ctxt, int x1, int y1, int x2, int y2, int a, int b)
     PFNPIXEL     pixel  = pc->pixel;
     BMP         *dstbmp = pc->dstbmp;
     DWORD        dc     = pc->drawcolor;
-    int  x, y, aa, bb, d, t;
+    int  x, y, t;
+    long aa, bb, d;
     BOOL flag = FALSE;
 
     if (x1 > x2) {

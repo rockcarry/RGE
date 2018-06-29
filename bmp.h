@@ -25,8 +25,8 @@ typedef struct {
     void (*getpal)(void *pb, int i, int n, BYTE *pal);
 } BMP;
 
-#define RGB332(r, g, b)  ( ((r) >> 5 << 5 ) | ((g) >> 5 << 2) | ((b) >> 6 << 0) )
-#define RGB565(r, g, b)  ( ((r) >> 3 << 11) | ((g) >> 2 << 5) | ((b) >> 3 << 0) )
+#define RGB332(r, g, b)  ( (((r) >> 5) << 5 ) | (((g) >> 5) << 2) | (((b) >> 6) << 0) )
+#define RGB565(r, g, b)  ( (((r) >> 3) << 11) | (((g) >> 2) << 5) | (((b) >> 3) << 0) )
 #define RGB888(r, g, b)  ( ((r) << 16) | ((g) << 8) | ((b) << 0) )
 #define ARGB(a, r, g, b) ( ((DWORD)(a) << 24) | ((r) << 16) | ((g) << 8) | ((b) << 0) )
 DWORD COLOR_CONVERT(int cdepth, DWORD color, BOOL flag);
