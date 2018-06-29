@@ -709,6 +709,7 @@ BOOL gifencodeframe(void *ctxt, int type, BMP *pb, int xpos, int ypos, GIF_CTRL 
 
     case GIF_FRAME_TYPE_TEXT:
         /* todo... */
+        DO_USE_VAR(text);
         break;
     }
     return TRUE;
