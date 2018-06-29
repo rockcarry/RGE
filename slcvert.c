@@ -17,7 +17,7 @@ static void scanline__8bitbmp_convert(void *dst, void *src, int w, SCANLINEPARAM
         pal = params->srcbmp->ppal;
         while (w--) {
             color      = *srcbyte++;
-            *dstbyte++ = RGB332(pal[color * 4 + 2], pal[color * 4 + 1], pal[color * 4 + 0]);
+            *dstbyte++ = RGB332(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
             if (srcbyte == end) srcbyte = start;
         }
         break;
@@ -58,7 +58,7 @@ static void scanline_16bitbmp_convert(void *dst, void *src, int w, SCANLINEPARAM
         pal = params->srcbmp->ppal;
         while (w--) {
             color      = *srcbyte++;
-            *dstword++ = RGB565(pal[color * 4 + 2], pal[color * 4 + 1], pal[color * 4 + 0]);
+            *dstword++ = RGB565(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
             if (srcbyte == end) srcbyte = start;
         }
         break;
@@ -93,9 +93,9 @@ static void scanline_24bitbmp_convert(void *dst, void *src, int w, SCANLINEPARAM
         pal = params->srcbmp->ppal;
         while (w--) {
             color      = *srcbyte++;
-            *dstbyte++ = pal[color * 4 + 0];
-            *dstbyte++ = pal[color * 4 + 1];
-            *dstbyte++ = pal[color * 4 + 2];
+            *dstbyte++ = pal[(size_t)color * 4 + 0];
+            *dstbyte++ = pal[(size_t)color * 4 + 1];
+            *dstbyte++ = pal[(size_t)color * 4 + 2];
             if (srcbyte == end) srcbyte = start;
         }
         break;
@@ -134,7 +134,7 @@ static void scanline_32bitbmp_convert(void *dst, void *src, int w, SCANLINEPARAM
         pal = params->srcbmp->ppal;
         while (w--) {
             color     = *srcbyte++;
-            *dstdword++= RGB888(pal[color*4+2], pal[color*4+1], pal[color*4+0]);
+            *dstdword++= RGB888(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
             if (srcbyte == end) srcbyte = start;
         }
         break;
@@ -186,7 +186,7 @@ static void scanline__8bitbmp_mask(void *dst, void *src, int w, SCANLINEPARAMS *
                 if (params->style & FS_256_COPYDATA) {
                     *dstbyte = (BYTE)color;
                 } else {
-                    *dstbyte = RGB332(pal[color * 4 + 2], pal[color * 4 + 1], pal[color * 4 + 0]);
+                    *dstbyte = RGB332(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
                 }
             }
             dstbyte++;
@@ -247,7 +247,7 @@ static void scanline_16bitbmp_mask(void *dst, void *src, int w, SCANLINEPARAMS *
         while (w--) {
             color = *srcbyte;
             if (color != params->maskc) {
-                *dstword = RGB565(pal[color * 4 + 2], pal[color * 4 + 1], pal[color * 4 + 0]);
+                *dstword = RGB565(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
             }
             dstword++;
             srcbyte++;
@@ -307,9 +307,9 @@ static void scanline_24bitbmp_mask(void *dst, void *src, int w, SCANLINEPARAMS *
         while (w--) {
             color = *srcbyte;
             if (color != params->maskc) {
-                dstbyte[0] = pal[color * 4 + 0];
-                dstbyte[1] = pal[color * 4 + 1];
-                dstbyte[2] = pal[color * 4 + 2];
+                dstbyte[0] = pal[(size_t)color * 4 + 0];
+                dstbyte[1] = pal[(size_t)color * 4 + 1];
+                dstbyte[2] = pal[(size_t)color * 4 + 2];
             }
             dstbyte += 3;
             srcbyte += 1;
@@ -376,7 +376,7 @@ static void scanline_32bitbmp_mask(void *dst, void *src, int w, SCANLINEPARAMS *
         while (w--) {
             color = *srcbyte;
             if (color != params->maskc) {
-                *dstdword = RGB888(pal[color*4+2], pal[color*4+1], pal[color*4+0]);
+                *dstdword = RGB888(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
             }
             dstdword++;
             srcbyte ++;

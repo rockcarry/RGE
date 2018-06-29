@@ -7,15 +7,15 @@ static __inline void draw_alpha_8bit(BYTE *pdst, int alpha, DWORD color)
     DWORD fc = (color | (color << 9)) & 0x38E3;
     DWORD bc = (*pdst | (*pdst << 9)) & 0x38E3;
     DWORD rc = (bc + alpha * (fc - bc) / 8) & 0x38E3;
-    *pdst = (BYTE)(rc | rc >> 9);
+    *pdst = (BYTE)(rc | (rc >> 9));
 }
 
 static __inline void draw_alpha_16bit(WORD *pdst, int alpha, DWORD color)
 {
-    DWORD fc = (color | (color << 16)) & 0x07E0F81F;
-    DWORD bc = (*pdst | (*pdst << 16)) & 0x07E0F81F;
-    DWORD rc = (bc + alpha * (fc - bc) / 32) & 0x07E0F81F;
-    *pdst = (WORD)(rc | rc >> 16);
+    DWORD fc = (color | (color << 16)) & 0x07E0F81FL;
+    DWORD bc = (*pdst | (*pdst << 16)) & 0x07E0F81FL;
+    DWORD rc = (bc + alpha * (fc - bc) / 32) & 0x07E0F81FL;
+    *pdst = (WORD)(rc | (rc >> 16));
 }
 
 static __inline void draw_alpha_24bit(BYTE *pdst, int alpha, BYTE r, BYTE g, BYTE b)
@@ -27,12 +27,12 @@ static __inline void draw_alpha_24bit(BYTE *pdst, int alpha, BYTE r, BYTE g, BYT
 
 static __inline void draw_alpha_32bit(DWORD *pdst, int alpha, DWORD color)
 {
-    DWORD fc = color & 0xff00ff;
-    DWORD fg = color & 0x00ff00;
-    DWORD bc = (*pdst & 0xff00ff);
-    DWORD bg = (*pdst & 0x00ff00);
-    DWORD rc = (bc + alpha * (fc - bc) / 256) & 0xff00ff;
-    DWORD rg = (bg + alpha * (fg - bg) / 256) & 0x00ff00;
+    DWORD fc = color & 0xff00ffL;
+    DWORD fg = color & 0x00ff00L;
+    DWORD bc = (*pdst & 0xff00ffL);
+    DWORD bg = (*pdst & 0x00ff00L);
+    DWORD rc = (bc + alpha * (fc - bc) / 256) & 0xff00ffL;
+    DWORD rg = (bg + alpha * (fg - bg) / 256) & 0x00ff00L;
     *pdst = rc | rg;
 }
 
@@ -51,7 +51,7 @@ static void scanline__8bitbmp_alpha(void *dst, void *src, int w, SCANLINEPARAMS 
         pal = params->srcbmp->ppal;
         while (w--) {
             color = *srcbyte;
-            color = RGB332(pal[color * 4 + 2], pal[color * 4 + 1], pal[color * 4 + 0]);
+            color = RGB332(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
             draw_alpha_8bit(dstbyte, alpha, color);
             dstbyte++;
             srcbyte++;
@@ -104,7 +104,7 @@ static void scanline_16bitbmp_alpha(void *dst, void *src, int w, SCANLINEPARAMS 
         pal = params->srcbmp->ppal;
         while (w--) {
             color = *srcbyte;
-            color = RGB565(pal[color * 4 + 2], pal[color * 4 + 1], pal[color * 4 + 0]);
+            color = RGB565(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
             draw_alpha_16bit(dstword, alpha, color);
             dstword++;
             srcbyte++;
@@ -157,9 +157,9 @@ static void scanline_24bitbmp_alpha(void *dst, void *src, int w, SCANLINEPARAMS 
         pal = params->srcbmp->ppal;
         while (w--) {
             color = *srcbyte;
-            r = pal[color * 4 + 2];
-            g = pal[color * 4 + 1];
-            b = pal[color * 4 + 0];
+            r = pal[(size_t)color * 4 + 2];
+            g = pal[(size_t)color * 4 + 1];
+            b = pal[(size_t)color * 4 + 0];
             draw_alpha_24bit(dstbyte, alpha, r, g, b);
             dstbyte += 3;
             srcbyte += 1;
@@ -220,7 +220,7 @@ static void scanline_32bitbmp_alpha(void *dst, void *src, int w, SCANLINEPARAMS 
         pal = params->srcbmp->ppal;
         while (w--) {
             color = *srcbyte;
-            color = RGB888(pal[color*4+2], pal[color*4+1], pal[color*4+0]);
+            color = RGB888(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
             draw_alpha_32bit(dstdword, alpha, color);
             dstdword++;
             srcbyte ++;
@@ -285,7 +285,7 @@ static void scanline__8bitbmp_maskalpha(void *dst, void *src, int w, SCANLINEPAR
         while (w--) {
             color = *srcbyte;
             if (color != params->maskc) {
-                color = RGB332(pal[color * 4 + 2], pal[color * 4 + 1], pal[color * 4 + 0]);
+                color = RGB332(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
                 draw_alpha_8bit(dstbyte, alpha, color);
             }
             dstbyte++;
@@ -348,7 +348,7 @@ static void scanline_16bitbmp_maskalpha(void *dst, void *src, int w, SCANLINEPAR
         while (w--) {
             color = *srcbyte;
             if (color != params->maskc) {
-                color = RGB565(pal[color * 4 + 2], pal[color * 4 + 1], pal[color * 4 + 0]);
+                color = RGB565(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
                 draw_alpha_16bit(dstword, alpha, color);
             }
             dstword++;
@@ -411,9 +411,9 @@ static void scanline_24bitbmp_maskalpha(void *dst, void *src, int w, SCANLINEPAR
         while (w--) {
             color = *srcbyte;
             if (color != params->maskc) {
-                r = pal[color * 4 + 2];
-                g = pal[color * 4 + 1];
-                b = pal[color * 4 + 0];
+                r = pal[(size_t)color * 4 + 2];
+                g = pal[(size_t)color * 4 + 1];
+                b = pal[(size_t)color * 4 + 0];
                 draw_alpha_24bit(dstbyte, alpha, r, g, b);
             }
             dstbyte += 3;
@@ -483,7 +483,7 @@ static void scanline_32bitbmp_maskalpha(void *dst, void *src, int w, SCANLINEPAR
         while (w--) {
             color = *srcbyte;
             if (color != params->maskc) {
-                color = RGB888(pal[color*4+2], pal[color*4+1], pal[color*4+0]);
+                color = RGB888(pal[(size_t)color*4+2], pal[(size_t)color*4+1], pal[(size_t)color*4+0]);
                 draw_alpha_32bit(dstdword, alpha, color);
             }
             dstdword++;

@@ -1,15 +1,18 @@
 /* 包含头文件 */
+#include <string.h>
 #include "scanline.h"
 
 /* 内部函数实现 */
 static void scanline_8bitsolid(void *dst, void *src, int w, SCANLINEPARAMS *params)
 {
-    memset(dst, params->fillc, w);
+    DO_USE_VAR(src);
+    memset(dst, (BYTE)params->fillc, w);
 }
 
 static void scanline16bitsolid(void *dst, void *src, int w, SCANLINEPARAMS *params)
 {
     WORD *dstword = (WORD*)dst;
+    DO_USE_VAR(src);
     while (w--) {
         *dstword++ = (WORD)params->fillc;
     }
@@ -18,6 +21,7 @@ static void scanline16bitsolid(void *dst, void *src, int w, SCANLINEPARAMS *para
 static void scanline24bitsolid(void *dst, void *src, int w, SCANLINEPARAMS *params)
 {
     BYTE *dstbyte = (BYTE*)dst;
+    DO_USE_VAR(src);
     while (w--) {
         *dstbyte++ = (BYTE)(params->fillc >> 0 );
         *dstbyte++ = (BYTE)(params->fillc >> 8 );
@@ -28,6 +32,7 @@ static void scanline24bitsolid(void *dst, void *src, int w, SCANLINEPARAMS *para
 static void scanline32bitsolid(void *dst, void *src, int w, SCANLINEPARAMS *params)
 {
     DWORD *dstdword = (DWORD*)dst;
+    DO_USE_VAR(src);
     while (w--) {
         *dstdword++ = params->fillc;
     }
@@ -45,6 +50,7 @@ static void scanline_8bitpattern(void *dst, void *src, int w, SCANLINEPARAMS *pa
 {
     BYTE *dstbyte = (BYTE*)dst;
     DWORD patline = params->pattern[(params->fillsrcy + params->filldsty) % 32];
+    DO_USE_VAR(src);
     while (w--) {
         if (patline & (1 << ((params->fillsrcx + params->filldstx++) % 32))) {
             *dstbyte = (BYTE)params->fillc;
@@ -57,6 +63,7 @@ static void scanline16bitpattern(void *dst, void *src, int w, SCANLINEPARAMS *pa
 {
     WORD *dstword = (WORD*)dst;
     DWORD patline = params->pattern[(params->fillsrcy + params->filldsty) % 32];
+    DO_USE_VAR(src);
     while (w--) {
         if (patline & (1 << ((params->fillsrcx + params->filldstx++) % 32))) {
             *dstword = (WORD)params->fillc;
@@ -69,6 +76,7 @@ static void scanline24bitpattern(void *dst, void *src, int w, SCANLINEPARAMS *pa
 {
     BYTE *dstbyte = (BYTE*)dst;
     DWORD patline = params->pattern[(params->fillsrcy + params->filldsty) % 32];
+    DO_USE_VAR(src);
     while (w--) {
         if (patline & (1 << ((params->fillsrcx + params->filldstx++) % 32))) {
             dstbyte[0] = (BYTE)(params->fillc >> 0 );
@@ -83,6 +91,7 @@ static void scanline32bitpattern(void *dst, void *src, int w, SCANLINEPARAMS *pa
 {
     DWORD *dstdword = (DWORD*)dst;
     DWORD  patline  = params->pattern[(params->fillsrcy + params->filldsty) % 32];
+    DO_USE_VAR(src);
     while (w--) {
         if (patline & (1 << ((params->fillsrcx + params->filldstx++) % 32))) {
             *dstdword = params->fillc;
@@ -105,10 +114,11 @@ static void scanline_8bitalpha(void *dst, void *src, int w, SCANLINEPARAMS *para
     DWORD alpha = (params->alpha >> 5);
     DWORD fc    = (params->fillc | (params->fillc << 9)) & 0x38E3;
     DWORD bc, rc;
+    DO_USE_VAR(src);
     while (w--) {
         bc = (*pbyte | (*pbyte << 9)) & 0x38E3;
         rc = (bc + alpha * (fc - bc) / 8) & 0x38E3;
-        *pbyte++ = (BYTE)(rc | rc >> 9);
+        *pbyte++ = (BYTE)(rc | (rc >> 9));
     }
 }
 
@@ -116,12 +126,13 @@ static void scanline16bitalpha(void *dst, void *src, int w, SCANLINEPARAMS *para
 {
     WORD *pword = (WORD*)dst;
     DWORD alpha = (params->alpha >> 3);
-    DWORD fc    = (params->fillc | (params->fillc << 16)) & 0x07E0F81F;
+    DWORD fc    = (params->fillc | (params->fillc << 16)) & 0x07E0F81FL;
     DWORD bc, rc;
+    DO_USE_VAR(src);
     while (w--) {
-        bc = (*pword | (*pword << 16)) & 0x07E0F81F;
-        rc = (bc + alpha * (fc - bc) / 32) & 0x07E0F81F;
-        *pword++ = (WORD)(rc | rc >> 16);
+        bc = (*pword | (*pword << 16)) & 0x07E0F81FL;
+        rc = (bc + alpha * (fc - bc) / 32) & 0x07E0F81FL;
+        *pword++ = (WORD)(rc | (rc >> 16));
     }
 }
 
@@ -132,6 +143,7 @@ static void scanline24bitalpha(void *dst, void *src, int w, SCANLINEPARAMS *para
     DWORD r     = (params->fillc >> 16) & 0xff;
     DWORD g     = (params->fillc >> 8 ) & 0xff;
     DWORD b     = (params->fillc >> 0 ) & 0xff;
+    DO_USE_VAR(src);
     while (w--) {
         pbyte[0]= (BYTE)(pbyte[0] + alpha * (b - pbyte[0]) / 256);
         pbyte[1]= (BYTE)(pbyte[1] + alpha * (g - pbyte[1]) / 256);
@@ -144,14 +156,15 @@ static void scanline32bitalpha(void *dst, void *src, int w, SCANLINEPARAMS *para
 {
     DWORD *pdword = (DWORD*)dst;
     DWORD  alpha  = params->alpha;
-    DWORD  fc     = params->fillc & 0xff00ff;
-    DWORD  fg     = params->fillc & 0x00ff00;
+    DWORD  fc     = params->fillc & 0xff00ffL;
+    DWORD  fg     = params->fillc & 0x00ff00L;
     DWORD  bc, bg, rc, rg;
+    DO_USE_VAR(src);
     while (w--) {
-        bc = (*pdword & 0xff00ff);
-        bg = (*pdword & 0x00ff00);
-        rc = (bc + alpha * (fc - bc) / 256) & 0xff00ff;
-        rg = (bg + alpha * (fg - bg) / 256) & 0x00ff00;
+        bc = (*pdword & 0xff00ffL);
+        bg = (*pdword & 0x00ff00L);
+        rc = (bc + alpha * (fc - bc) / 256) & 0xff00ffL;
+        rg = (bg + alpha * (fg - bg) / 256) & 0x00ff00L;
         *pdword++ = rc | rg;
     }
 }
