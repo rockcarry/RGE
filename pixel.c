@@ -1,7 +1,7 @@
-// 包含头文件
+/* 包含头文件 */
 #include "pixel.h"
 
-// 内部函数实现
+/* 内部函数实现 */
 /* ++ solid pixel functions ++ */
 static void pixel8bitsolid(BMP *pb, int x, int y, DWORD c)
 {

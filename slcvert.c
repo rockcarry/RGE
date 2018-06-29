@@ -2,7 +2,7 @@
 #include "scanline.h"
 
 /* 内部函数实现 */
-//++ TABFN_SCANLINEBMP_CONVERT
+/* ++ TABFN_SCANLINEBMP_CONVERT */
 static void scanline__8bitbmp_convert(void *dst, void *src, int w, SCANLINEPARAMS *params)
 {
     BYTE  *dstbyte = (BYTE*)dst;
@@ -164,9 +164,9 @@ PFNSCANLINE TABFN_SCANLINEBMP_CONVERT[] =
     scanline_24bitbmp_convert,
     scanline_32bitbmp_convert,
 };
-//-- TABFN_SCANLINEBMP_CONVERT
+/* -- TABFN_SCANLINEBMP_CONVERT */
 
-//++ TABFN_SCANLINEBMP_MASK
+/* ++ TABFN_SCANLINEBMP_MASK */
 static void scanline__8bitbmp_mask(void *dst, void *src, int w, SCANLINEPARAMS *params)
 {
     BYTE  *dstbyte = (BYTE *)dst;
@@ -428,4 +428,4 @@ PFNSCANLINE TABFN_SCANLINEBMP_MASK[] =
     scanline_24bitbmp_mask,
     scanline_32bitbmp_mask,
 };
-//-- TABFN_SCANLINEBMP_MASK
+/* -- TABFN_SCANLINEBMP_MASK */

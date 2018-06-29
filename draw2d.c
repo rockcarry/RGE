@@ -1,6 +1,8 @@
 #ifndef _TEST_
 
 /* 包含头文件 */
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "drawctxt.h"
 #include "draw2d.h"
@@ -13,14 +15,14 @@ void* draw2d_init(BMP *pb)
 {
     DRAWCONTEXT *pc;
 
-    // invalid pb
+    /* invalid pb */
     if (!pb) return NULL;
 
-    // allocate context
+    /* allocate context */
     pc = (DRAWCONTEXT*)calloc(1, sizeof(DRAWCONTEXT));
     if (!pc) return NULL;
 
-    // init context
+    /* init context */
     pc->dstbmp               = pb;
     pc->drawcolor            = RGB888(255, 255, 255);
     pc->linestyle            = LS_SOLID;
@@ -37,7 +39,7 @@ void* draw2d_init(BMP *pb)
     pc->scanlinepalmapdst    = PFN_SCANLINE_PALMAP_DST;
     pc->scanlinepalmapsrc    = PFN_SCANLINE_PALMAP_SRC;
 
-    // pixel & scanline
+    /* pixel & scanline */
     pc->pixel    = pc->pixelsolid;
     pc->scanline = pc->scanlinebarsolid;
 
@@ -48,10 +50,10 @@ void draw2d_free(void *ctxt)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
 
-    // invalid ctxt
+    /* invalid ctxt */
     if (!ctxt) return;
 
-    // release context
+    /* release context */
     if (pc) free(pc);
 }
 
@@ -102,7 +104,7 @@ void setlinestyle(void *ctxt, DWORD style)
     pc->linestyle = style;
 }
 
-void setlinewidth(void *ctxt, DWORD width)
+void setlinewidth(void *ctxt, int width)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
     pc->linewidth = width;
@@ -573,7 +575,7 @@ BOOL polygon(void *ctxt, int *pp, int n)
     int    miny;
     int    i;
 
-    //++ 绘制非填充多边形 ++//
+    /*++ 绘制非填充多边形 ++*/
     if (pc->fillparams.style & FS_NONE) {
         for (i=0; i<n-1; i++) {
             line(ctxt, pp[i*2], pp[i*2+1], pp[(i+1)*2], pp[(i+1)*2+1]);
@@ -583,7 +585,7 @@ BOOL polygon(void *ctxt, int *pp, int n)
         }
         return TRUE;
     }
-    //-- 绘制非填充多边形 --//
+    /*-- 绘制非填充多边形 --*/
 
     /* 计算 pgminy 和 pgmaxy */
     pgminy = pp[0 * 2 + 1];
@@ -895,8 +897,8 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     circle(context, 320, 240, 100);
     floodfill(context, 100, 100);
 
-//  setfillstyle(context, FS_ALPHA);
-//  setfillcolor(context, RGB888(0, 255, 0));
+/*  setfillstyle(context, FS_ALPHA); */
+    setfillcolor(context, RGB888(0, 255, 0));
     setfillstyle(context, FS_PATTERN);
     setfillpattern(context, pattern);
     polygon(context, pp, sizeof(pp) / sizeof(int) / 2);

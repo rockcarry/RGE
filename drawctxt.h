@@ -1,7 +1,7 @@
 #ifndef __RGE_DRAWCTXT_H__
 #define __RGE_DRAWCTXT_H__
 
-// 包含头文件
+/* 包含头文件 */
 #include "pixel.h"
 #include "scanline.h"
 

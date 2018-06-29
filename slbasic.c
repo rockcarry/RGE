@@ -164,7 +164,7 @@ PFNSCANLINE TABFN_SCANLINEBAR_ALPHA[] =
     scanline32bitalpha,
 };
 
-//++ TABFN_SCANLINEBMP_FAST
+/*++ TABFN_SCANLINEBMP_FAST */
 static void scanline__8bitbmp_fast(void *dst, void *src, int w, SCANLINEPARAMS *params)
 {
     BYTE *start = params->start;
@@ -238,4 +238,4 @@ PFNSCANLINE TABFN_SCANLINEBMP_FAST[] =
     scanline_24bitbmp_fast,
     scanline_32bitbmp_fast,
 };
-//-- TABFN_SCANLINEBMP_FAST
+/*-- TABFN_SCANLINEBMP_FAST */

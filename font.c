@@ -18,7 +18,7 @@ static void draw_raster_font(void *ctxt, int x, int y, BYTE *data, int w, int h)
     DWORD    color;
     int      i, j;
 
-    // invalid ctxt
+    /* invalid ctxt */
     if (!ctxt || !data) return;
 
     pixel = pc->drawalpha ? pc->pixelalpha : pc->pixelsolid;
@@ -119,7 +119,7 @@ void settextfont(void *ctxt, FONT *font)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
 
-    // invalid ctxt & brush
+    /* invalid ctxt & brush */
     if (!ctxt) return;
 
     pc->textfont = font;
@@ -129,7 +129,7 @@ void settextcolor(void *ctxt, DWORD color)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
 
-    // invalid ctxt & brush
+    /* invalid ctxt & brush */
     if (!ctxt) return;
 
     pc->textcolor = COLOR_CONVERT(pc->dstbmp->cdepth, color, TRUE);

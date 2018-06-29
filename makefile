@@ -17,10 +17,10 @@ OBJS = \
     gif.o \
     win.o \
     pixel.o \
-    scanline-basic.o   \
-    scanline-convert.o \
-    scanline-alpha.o   \
-    scanline-palmap.o  \
+    slbasic.o \
+    slcvert.o \
+    slalpha.o \
+    slpalmap.o \
     font.o \
     bitblt.o \
     draw2d.o \

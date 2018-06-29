@@ -1,10 +1,10 @@
 #ifndef __RGE_SCANLINE_H__
 #define __RGE_SCANLINE_H__
 
-// 包含头文件
+/* 包含头文件 */
 #include "bmp.h"
 
-// 常量定义
+/* 常量定义 */
 /* fill style */
 enum {
     FS_AUTO_LOCK      = (1 << 31),
@@ -21,7 +21,7 @@ enum {
     FS_256_PALMAPSRC  = (1 << 10),
 };
 
-// 类型定义
+/* 类型定义 */
 typedef struct {
     BMP   *srcbmp;
     DWORD  style;
@@ -40,7 +40,7 @@ typedef struct {
 
 typedef void (*PFNSCANLINE)(void *dst, void *src, int w, SCANLINEPARAMS *params);
 
-// 全局变量声明
+/* 全局变量声明 */
 extern PFNSCANLINE TABFN_SCANLINEBAR_SOLID    [];
 extern PFNSCANLINE TABFN_SCANLINEBAR_PATTERN  [];
 extern PFNSCANLINE TABFN_SCANLINEBAR_ALPHA    [];

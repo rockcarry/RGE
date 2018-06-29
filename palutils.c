@@ -1,6 +1,7 @@
 #ifndef _TEST_
 
 /* 包含头文件 */
+#include <stdlib.h>
 #include "pal.h"
 #include "palutils.h"
 
@@ -39,7 +40,7 @@ void palutils_alpha_palmap(BYTE *palmap, BYTE *pal, DWORD color)
     }
 }
 
-//++ palutils_matchpal
+/* ++ palutils_matchpal */
 /* 内部类型定义 */
 typedef struct {
     int  color;
@@ -90,8 +91,8 @@ void palutils_matchpal(BMP *pb1, BMP *pb2)
     black1 = PALRGB(pb1->ppal, 0, 0, 0);
     black2 = PALRGB(pb2->ppal, 0, 0, 0);
     if (colors[black1].freq > colors[black2 + 256].freq) {
-        colors[black1 + 0  ].freq = 0x3fffffff; // 不能使用 0x7fffffff
-        colors[black1 + 256].freq = 0;          // 否则在下一步合并重复颜色时会溢出
+        colors[black1 + 0  ].freq = 0x3fffffff; /* 不能使用 0x7fffffff */
+        colors[black1 + 256].freq = 0;          /* 否则在下一步合并重复颜色时会溢出 */
     } else {
         colors[black1 + 0  ].freq = 0;
         colors[black2 + 256].freq = 0x3fffffff;
@@ -164,7 +165,7 @@ void palutils_matchpal(BMP *pb1, BMP *pb2)
     setbmppal(pb1, 0, 256, newpal);
     setbmppal(pb2, 0, 256, newpal);
 }
-//-- palutils_matchpal
+/* -- palutils_matchpal */
 
 #else
 /* 在这里书写测试程序 */

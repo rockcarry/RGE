@@ -1,6 +1,7 @@
 #ifndef _TEST_
 
 /* 包含头文件 */
+#include <stdlib.h>
 #include "lzw.h"
 #include "log.h"
 
@@ -230,7 +231,7 @@ BOOL lzwencode(LZWCODEC *plc, void *fpout, FIO *fioout, void *fpin, FIO *fioin)
     /* while until there is no data in source bit stream */
     while (getbits(fpin, &currentbyte, plc->LZW_ROOT_SIZE, fioin)) {
         /* 在 LZW 编码表中查找由当前前缀和当前字符组成的字符串 */
-        findcode = FindInLZWStringTable(plc, prefixcode, currentbyte);
+        findcode = FindInLZWStringTable(plc, prefixcode, (int)currentbyte);
 
         if (findcode == -1) {
             /* 在 LZW 编码表中没有该字符串 */
@@ -241,7 +242,7 @@ BOOL lzwencode(LZWCODEC *plc, void *fpout, FIO *fioout, void *fpin, FIO *fioin)
             }
 
             /* 将当前前缀和当前字符所组成的字符串加入编码表 */
-            if (!AddToLZWStringTable(plc, prefixcode, currentbyte, TRUE)) {
+            if (!AddToLZWStringTable(plc, prefixcode, (int)currentbyte, TRUE)) {
                 /* 加入失败说明编码表已满 */
                 /* 写出一个 LZW_CLEAR_CODE 到比特流 */
                 if (!putbits(fpout, plc->LZW_CLEAR_CODE, curcodesize, fioout)) {
@@ -262,7 +263,7 @@ BOOL lzwencode(LZWCODEC *plc, void *fpout, FIO *fioout, void *fpin, FIO *fioin)
             }
 
             /* 置当前前缀码为 currentbyte */
-            prefixcode = currentbyte;
+            prefixcode = (int)currentbyte;
         } else {
             /* 在 LZW 编码表中找到该字符串 */
             /* 置当前前缀码为该字符串的编码 */
@@ -333,7 +334,7 @@ BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIO *fioout, void *fpin, FIO *fioin)
 
             /* 根据 _str_tab_pos 重新计算新的 curcodesize */
             if (   plc->_str_tab_pos == (1 << curcodesize)
-                && curcodesize < plc->LZW_CODE_SIZE_MAX) // note: 这个限制条件必须要
+                && curcodesize < plc->LZW_CODE_SIZE_MAX) /* note: 这个限制条件必须要 */
             {
                 /* 增加 curcodesize 的值 */
                 curcodesize++;

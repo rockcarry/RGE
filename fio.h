@@ -2,6 +2,7 @@
 #define __RGE_FIO_H__
 
 /* 包含头文件 */
+#include <stdio.h>
 #include "stdefine.h"
 
 /* 公共的 fio context */

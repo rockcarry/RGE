@@ -12,7 +12,7 @@
 typedef struct {
     WORD  width;     /* pcx 的宽度 */
     WORD  height;    /* pcx 的高度 */
-    DWORD datasize;  /* pcx 的数据长度 */
+    WORD  datasize;  /* pcx 的数据长度 */
     BYTE  encoding;  /* pcx 的编码方式 */
     BYTE *pdata;     /* 指向数据 */
     BYTE *ppal;      /* 指向调色板 */

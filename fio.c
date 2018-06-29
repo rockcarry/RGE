@@ -1,5 +1,7 @@
 /* 包含头文件 */
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "fio.h"
 
 /* 内部类型定义 */
@@ -353,7 +355,7 @@ BOOL getbits(void *fp, DWORD *data, int size, FIO *fio)
        *data = ctxt->bitbuf;
         pos  = ctxt->bitflag;
         for (i=0; i<need; i++) {
-            byte = fio->getc(fp);
+            byte = (fio->getc)(fp);
             if (byte == EOF) return FALSE;
 
            *data |= byte << pos;
@@ -383,13 +385,13 @@ BOOL putbits(void *fp, DWORD data, int size, FIO *fio)
         ctxt->bitflag+= nbit;
         if (ctxt->bitflag < 8) return TRUE;
 
-        if (EOF == fio->putc(ctxt->bitbuf, fp)) return FALSE;
+        if (EOF == (fio->putc)(ctxt->bitbuf, fp)) return FALSE;
         data >>= nbit;
         size  -= nbit;
     }
 
     while (size >= 8) {
-        if (EOF == fio->putc(data, fp)) return FALSE;
+        if (EOF == (fio->putc)(data, fp)) return FALSE;
         data >>= 8;
         size  -= 8;
     }
@@ -416,6 +418,7 @@ BOOL flushbits(void *fp, int flag, FIO *fio)
 BOOL alignbyte(void *fp, FIO *fio)
 {
     FIO_CONTEXT *ctxt = (FIO_CONTEXT*)fp;
+    DO_USE_VAR(fio);
     ctxt->bitflag = 0;
     ctxt->bitbuf  = 0;
     return TRUE;

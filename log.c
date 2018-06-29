@@ -32,7 +32,7 @@ int log_printf(char *format, ...)
 
     if (s_log_fp) {
         va_start(valist, format);
-        vsnprintf(buf, MAX_LOG_BUF, format, valist);
+        vsprintf(buf, format, valist);
         fprintf(s_log_fp, "%s", buf);
         fflush (s_log_fp);
         va_end(valist);

@@ -34,7 +34,7 @@ void setdrawcolor  (void *ctxt, DWORD  color  );
 void setdrawflags  (void *ctxt, DWORD  flags  );
 void setantialias  (void *ctxt, int    antia  );
 void setlinestyle  (void *ctxt, DWORD  style  );
-void setlinewidth  (void *ctxt, DWORD  width  );
+void setlinewidth  (void *ctxt, int    width  );
 void setfillstyle  (void *ctxt, DWORD  style  );
 void setfillcolor  (void *ctxt, DWORD  color  );
 void setfillpattern(void *ctxt, DWORD *pattern);
@@ -46,15 +46,15 @@ void setpalmaptab  (void *ctxt, BYTE  *palmap );
 void  putpixel(void *ctxt, int x, int y, DWORD c);
 DWORD getpixel(void *ctxt, int x, int y);
 
-void line     (void *ctxt, int x1, int y1, int x2, int y2); // Ïß
-void rectangle(void *ctxt, int x1, int y1, int x2, int y2); // ¾ØÐÎ
-void roundrect(void *ctxt, int x1, int y1, int x2, int y2, int a, int b); // Ô²½Ç¾ØÐÎ
-void circle   (void *ctxt, int xo, int yo, int r);          // Ô²
-void ellipse  (void *ctxt, int xo, int yo, int a, int b);   // ÍÖÔ²
-BOOL arc      (void *ctxt, int xo, int yo, int a, int b, int s, int e);   // Ô²»¡
-BOOL polygon  (void *ctxt, int *pp, int n);                 // ¶à±ßÐÎ
-BOOL floodfill(void *ctxt, int x, int y);                   // ·ºÀÄÊ½Ìî³ä
-BOOL bezier   (void *ctxt, int *pp, int degree, int pd);    // ±´Èû¶ûÇúÏß
+void line     (void *ctxt, int x1, int y1, int x2, int y2); /* Ïß */
+void rectangle(void *ctxt, int x1, int y1, int x2, int y2); /* ¾ØÐÎ */
+void roundrect(void *ctxt, int x1, int y1, int x2, int y2, int a, int b); /* Ô²½Ç¾ØÐÎ */
+void circle   (void *ctxt, int xo, int yo, int r);          /* Ô² */
+void ellipse  (void *ctxt, int xo, int yo, int a, int b);   /* ÍÖÔ² */
+BOOL arc      (void *ctxt, int xo, int yo, int a, int b, int s, int e);   /* Ô²»¡ */
+BOOL polygon  (void *ctxt, int *pp, int n);                 /* ¶à±ßÐÎ */
+BOOL floodfill(void *ctxt, int x, int y);                   /* ·ºÀÄÊ½Ìî³ä */
+BOOL bezier   (void *ctxt, int *pp, int degree, int pd);    /* ±´Èû¶ûÇúÏß */
 
 #endif
 

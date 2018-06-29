@@ -2,7 +2,7 @@
 #include "scanline.h"
 
 /* º¯ÊýÊµÏÖ */
-void select_scanline_func(BMP *dstpb, BMP *srcpb, int style, PFNSCANLINE *pfn, DWORD *color)
+void select_scanline_func(BMP *dstpb, BMP *srcpb, int style, PFNSCANLINE *pfn)
 {
     int cdepthdst = dstpb ? dstpb->cdepth : 8;
     int cdepthsrc = srcpb ? srcpb->cdepth : 8;

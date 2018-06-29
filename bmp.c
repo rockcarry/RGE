@@ -2,6 +2,8 @@
 
 /* 包含头文件 */
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "pal.h"
 #include "bmp.h"
 
@@ -247,7 +249,7 @@ BOOL savebmp(BMP *pb, char *file, FIO *fio)
     if (bmpfile.bitsperpixel == 16) {
         bmpfile.dataoffset += sizeof(DWORD) * 3;
         bmpfile.filesize   += sizeof(DWORD) * 3;
-        bmpfile.compression = 3; // BI_BITFIELDS
+        bmpfile.compression = 3; /* BI_BITFIELDS */
     }
 
     /* 打开文件 */
@@ -282,16 +284,16 @@ BOOL savebmp(BMP *pb, char *file, FIO *fio)
 
 DWORD COLOR_CONVERT(int cdepth, DWORD color, BOOL flag)
 {
-    if (flag) { // RGB888 -> RGB332/RGB565/RGB888
-        int r = (color >> 16) & 0xff;
-        int g = (color >> 8 ) & 0xff;
-        int b = (color >> 0 ) & 0xff;
+    if (flag) { /* RGB888 -> RGB332/RGB565/RGB888 */
+        BYTE r = (BYTE)(color >> 16);
+        BYTE g = (BYTE)(color >> 8 );
+        BYTE b = (BYTE)(color >> 0 );
         switch (cdepth) {
         case 8 : return RGB332(r, g, b);
         case 16: return RGB565(r, g, b);
         default: return color;
         }
-    } else { // RGB332/RGB565/RGB888 -> RGB888
+    } else { /* RGB332/RGB565/RGB888 -> RGB888 */
         switch (cdepth) {
         case 8:
             return ( ((color & 0xE0) << 16) | ((color & 0xE0) << 13) | ((color & 0xC0) << 10)
