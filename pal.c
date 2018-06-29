@@ -294,44 +294,19 @@ BYTE PALRGB(BYTE *pal, BYTE r, BYTE g, BYTE b)
 }
 
 #else
+#include <stdlib.h>
+#include <conio.h>
 #include "pal.h"
-#include "win.h"
+#include "screen.h"
+#include "fftask.h"
 
-LRESULT CALLBACK MyWndProc(
-    HWND hwnd,      /* handle to window */
-    UINT uMsg,      /* message identifier */
-    WPARAM wParam,  /* first message parameter */
-    LPARAM lParam   /* second message parameter */
-)
+void main(void)
 {
     BYTE pal[256*4];
-    switch (uMsg)
-    {
-    case WM_TIMER:
-        lockbmp(&SCREEN);
-        getbmppal(&SCREEN, 0, 256, pal);
-        rightrotpal(pal);
-        setbmppal(&SCREEN, 0, 256, pal);
-        unlockbmp(&SCREEN);
-        return 0;
+    int i, j;
 
-    default:
-        return DEF_SCREEN_WNDPROC(hwnd, uMsg, wParam, lParam);
-    }
-}
-
-int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
-{
-    HWND hwnd;
-    int  i, j;
-
-    RGE_WIN_INIT(hInst);
-    SCREEN.cdepth = 8;
+    ffkernel_init();
     createbmp(&SCREEN);
-
-    hwnd = GET_SCREEN_HWND();
-    SetWindowLong(hwnd, GWL_WNDPROC, (long)MyWndProc);
-    SetTimer(hwnd, 1, 50, NULL);
 
     lockbmp(&SCREEN);
     for (i=0; i<SCREEN.height; i++)
@@ -339,10 +314,18 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
             *((BYTE*)SCREEN.pdata + i * SCREEN.stride + j) = RGB332(i, j, i);
     unlockbmp(&SCREEN);
 
-    RGE_MSG_LOOP();
-    KillTimer(hwnd, 1);
+    getbmppal(&SCREEN, 0, 256, pal);
+    while (!kbhit()) {
+        lockbmp(&SCREEN);
+        rightrotpal(pal);
+        setbmppal(&SCREEN, 0, 256, pal);
+        unlockbmp(&SCREEN);
+        task_sleep(50);
+    }
+
+    getch();
     destroybmp(&SCREEN);
-    return 0;
+    ffkernel_exit();
 }
 #endif
 

@@ -853,21 +853,21 @@ error_handler:
 
 #else
 /* 包含头文件 */
-#include "win.h"
+#include <stdlib.h>
+#include <conio.h>
+#include "screen.h"
 #include "draw2d.h"
 
-int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
+void main(void)
 {
     void *context;
     BMP   me = {0};
     int pp[] = {12, 32, 233, 333, 233, 333, 500, 400, 570, 123};
-    DWORD pattern[32] = { 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
-                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
-                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
-                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555 };
+    DWORD pattern[32] = { 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L,
+                          0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L,
+                          0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L,
+                          0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L };
 
-    RGE_WIN_INIT(hInst);
-    SCREEN.cdepth = 32;
     createbmp(&SCREEN);
     loadbmp(&me, "res\\boy8888.bmp", NULL);
 
@@ -908,10 +908,9 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     paint_done(context);
     draw2d_free(context);
 
-    RGE_MSG_LOOP();
+    getch();
     destroybmp(&me);
     destroybmp(&SCREEN);
-    return 0;
 }
 #endif
 

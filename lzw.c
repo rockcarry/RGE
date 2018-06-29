@@ -365,25 +365,24 @@ BOOL lzwdecode(LZWCODEC *plc, void *fpout, FIO *fioout, void *fpin, FIO *fioin)
 
 #else
 /* 包含头文件 */
+#include <stdlib.h>
+#include <string.h>
 #include "lzw.h"
 #include "log.h"
 
-int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
+int main(void)
 {
-    char orgfile[MAX_PATH];
-    char encfile[MAX_PATH];
-    char decfile[MAX_PATH];
+    char orgfile[256];
+    char encfile[256];
+    char decfile[256];
     void *fpin, *fpout;
     LZWCODEC lzwcodec = {0};
 
     log_init("log.txt");
 
-    if (*lpszCmdLine == '\0') lpszCmdLine = "lzw.c";
-    log_printf("lpszCmdLine = %s\n", lpszCmdLine);
-
-    strcpy(orgfile, lpszCmdLine);
-    strcpy(encfile, lpszCmdLine); strcat(encfile, ".enc");
-    strcpy(decfile, lpszCmdLine); strcat(decfile, ".dec");
+    strcpy(orgfile, "lzw.c");
+    strcpy(encfile, "lzw.c"); strcat(encfile, ".enc");
+    strcpy(decfile, "lzw.c"); strcat(decfile, ".dec");
 
     initlzwcodec(&lzwcodec);
     fpin  = DEF_FIO.open(orgfile, "rb");

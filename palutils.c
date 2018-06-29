@@ -169,7 +169,9 @@ void palutils_matchpal(BMP *pb1, BMP *pb2)
 
 #else
 /* 在这里书写测试程序 */
-#include "win.h"
+#include <stdlib.h>
+#include <conio.h>
+#include "screen.h"
 #include "draw2d.h"
 #include "bitblt.h"
 #include "font.h"
@@ -178,63 +180,13 @@ void palutils_matchpal(BMP *pb1, BMP *pb2)
 static BMP mybmp1 = {0};
 static BMP mybmp2 = {0};
 
-LRESULT CALLBACK MyWndProc(
-    HWND hwnd,      /* handle to window */
-    UINT uMsg,      /* message identifier */
-    WPARAM wParam,  /* first message parameter */
-    LPARAM lParam   /* second message parameter */
-)
+void main(void)
 {
-    static int counter = 0;
-
-    switch (uMsg) {
-    case WM_KEYDOWN:
-        switch (counter) {
-        case 0:
-            putbmp(&SCREEN, 0 , 20, &mybmp1, FS_SOLID, 0, 0, NULL);
-            putbmp(&SCREEN, 60, 60, &mybmp1, FS_SOLID, 0, 0, NULL);
-            setbmppal(&SCREEN, 0, 256, mybmp1.ppal);
-            putbmp(&SCREEN, 0, 20, &mybmp1, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
-            break;
-
-        case 1:
-            setbmppal(&SCREEN, 0, 256, mybmp2.ppal);
-            putbmp(&SCREEN, 150, 20, &mybmp2, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
-            break;
-
-        case 2:
-            palutils_matchpal(&mybmp1, &mybmp2);
-            setbmppal(&SCREEN, 0, 256, mybmp1.ppal);
-            putbmp(&SCREEN, 0  , 20, &mybmp1, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
-            putbmp(&SCREEN, 150, 20, &mybmp2, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
-            break;
-
-        case 3:
-            savebmp(&SCREEN, "screen.bmp", NULL);
-            PostMessage(hwnd, WM_CLOSE, 0, 0);
-            break;
-        }
-        counter++;
-        return 0;
-
-    default:
-        return DEF_SCREEN_WNDPROC(hwnd, uMsg, wParam, lParam);
-    }
-}
-
-int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
-{
-    HWND  hwnd;
     void *ctxt;
     BYTE  palmap1[256];
     BYTE  palmap2[256];
 
-    RGE_WIN_INIT(hInst);
-    SCREEN.cdepth = 8;
     createbmp(&SCREEN);
-
-    hwnd = GET_SCREEN_HWND();
-    SetWindowLong(hwnd, GWL_WNDPROC, (long)MyWndProc);
 
     loadfont(&FONT16);
     loadbmp(&mybmp1, "res/me.bmp"    , NULL);
@@ -245,7 +197,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
 
     ctxt = draw2d_init(&SCREEN);
     settextfont (ctxt, &FONT16);
-    settextcolor(ctxt, RGB(0, 255, 0));
+    settextcolor(ctxt, RGB888(0, 255, 0));
     paint_begin (ctxt);
     printtext   (ctxt, "调色板映射演示 + 调色板匹配演示");
     paint_done  (ctxt);
@@ -253,13 +205,31 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
 
     putbmp(&SCREEN, 0 , 20, &mybmp1, FS_256_PALMAPSRC, 0, 0, palmap1);
     putbmp(&SCREEN, 60, 60, &mybmp1, FS_256_PALMAPDST, 0, 0, palmap2);
+    getch();
 
-    RGE_MSG_LOOP();
+    putbmp(&SCREEN, 0 , 20, &mybmp1, FS_SOLID, 0, 0, NULL);
+    putbmp(&SCREEN, 60, 60, &mybmp1, FS_SOLID, 0, 0, NULL);
+    setbmppal(&SCREEN, 0, 256, mybmp1.ppal);
+    putbmp(&SCREEN, 0, 20, &mybmp1, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
+    getch();
+
+    setbmppal(&SCREEN, 0, 256, mybmp2.ppal);
+    putbmp(&SCREEN, 150, 20, &mybmp2, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
+    getch();
+
+    palutils_matchpal(&mybmp1, &mybmp2);
+    setbmppal(&SCREEN, 0, 256, mybmp1.ppal);
+    putbmp(&SCREEN, 0  , 20, &mybmp1, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
+    putbmp(&SCREEN, 150, 20, &mybmp2, FS_AUTO_LOCK|FS_256_COPYDATA, 0, 0, NULL);
+    getch();
+
+    savebmp(&SCREEN, "screen.bmp", NULL);
+    getch();
+
     destroybmp(&mybmp1);
     destroybmp(&mybmp2);
     destroybmp(&SCREEN);
     freefont(&FONT16);
-    return 0;
 }
 #endif
 

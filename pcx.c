@@ -271,28 +271,21 @@ BOOL decodepcx(PCX *pcx, BMP *pb)
 }
 
 #else
-#include "win.h"
+#include <stdlib.h>
+#include <conio.h>
+#include "screen.h"
 #include "pcx.h"
 #include "bitblt.h"
 
-int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
+void main(void)
 {
     PCX mypcx1 = {0};
     PCX mypcx2 = {0};
     BMP mybmp  = {0};
 
-    if (*lpszCmdLine == 0) {
-        lpszCmdLine = "res/me.pcx";
-    }
-
-    RGE_WIN_INIT(hInst);
-
-    loadpcx(&mypcx1, lpszCmdLine, NULL);
+    loadpcx(&mypcx1, "res/me.pcx", NULL);
     decodepcx(&mypcx1, &mybmp);
 
-    SCREEN.width  = 640;
-    SCREEN.height = 480;
-    SCREEN.cdepth = 32;
     createbmp(&SCREEN);
 
     putbmp(&SCREEN,
@@ -301,13 +294,12 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
            &mybmp, FS_AUTO_LOCK, 0, 0, NULL);
     encodepcx(&mypcx2, &SCREEN);
 
-    RGE_MSG_LOOP();
+    getch();
     savepcx(&mypcx2, "screen.pcx", NULL);
     destroypcx(&mypcx1);
     destroypcx(&mypcx2);
     destroybmp(&mybmp);
     destroybmp(&SCREEN);
-    return 0;
 }
 #endif
 

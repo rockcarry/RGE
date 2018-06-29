@@ -2,31 +2,31 @@
 # written by rockcarry
 
 # 编译器定义
-CC      = gcc
-STRIP   = strip
-CCFLAGS = -mwindows -Wall
+CC      = tcc
+CCFLAGS = -1 -O -d -Z -f87 -w -ml
 
 # 所有的目标文件
 OBJS = \
-    log.o \
-    fio.o \
-    pal.o \
-    bmp.o \
-    pcx.o \
-    lzw.o \
-    gif.o \
-    win.o \
-    pixel.o \
-    slbasic.o \
-    slcvert.o \
-    slalpha.o \
-    slpalmap.o \
-    font.o \
-    bitblt.o \
-    draw2d.o \
-    drawctxt.o \
-    palutils.o
-
+    log.obj \
+    fio.obj \
+    pal.obj \
+    bmp.obj \
+    pcx.obj \
+    lzw.obj \
+    gif.obj \
+    screen.obj \
+    pixel.obj \
+    slbasic.obj \
+    slcvert.obj \
+    slalpha.obj \
+    slpalmap.obj \
+    font.obj \
+    bitblt.obj \
+    draw2d.obj \
+    drawctxt.obj \
+    palutils.obj \
+    fftask.obj \
+    wavdev.obj
 
 # 所有的可执行目标
 EXES = \
@@ -35,46 +35,33 @@ EXES = \
     pcx.exe \
     lzw.exe \
     gif.exe \
-    win.exe \
     font.exe \
     bitblt.exe \
     draw2d.exe \
     palutils.exe
 
 # 输出的库文件
-DLL = rge.dll
+LIB = rge.lib
 
 # 编译规则
-all : $(DLL) $(EXES)
+all : $(LIB) $(EXES)
 
-$(DLL) : $(OBJS)
-	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lddraw
-	$(STRIP) $@
+$(LIB) : $(OBJS)
+	$(foreach n, $(OBJS), $(shell tlib $@ -+ $(n)))
 
-%.o : %.c %.h stdefine.h
-	$(CC) $(CCFLAGS) -o $@ $< -c
+%.obj : %.c %.h stdefine.h
+	$(CC) $(CCFLAGS) -c -o$@ $<
 
-%.o : %.cpp %.h stdefine.h
-	$(CC) $(CCFLAGS) -o $@ $< -c
+%.obj : %.c stdefine.h
+	$(CC) $(CCFLAGS) -c -o$@ $<
 
-%.o : %.c stdefine.h
-	$(CC) $(CCFLAGS) -o $@ $< -c
-
-%.o : %.cpp stdefine.h
-	$(CC) $(CCFLAGS) -o $@ $< -c
-
-%.exe : %.c %.h $(DLL)
-	$(CC) $(CCFLAGS) -o $@ $< $(DLL) -D_TEST_
-	$(STRIP) $@
-
-%.exe : %.cpp %.h $(DLL)
-	$(CC) $(CCFLAGS) -o $@ $< $(DLL) -D_TEST_
-	$(STRIP) $@
+%.exe : %.c %.h $(LIB)
+	$(CC) $(CCFLAGS) -D_TEST_ $< $(LIB)
 
 clean :
-	-rm -f *.o
-	-rm -f *.dll
-	-rm -f *.exe
+	-rm -f *.OBJ
+	-rm -f *.LIB
+	-rm -f *.EXE
 	-rm -f *.bmp
 	-rm -f *.pcx
 	-rm -f *.gif

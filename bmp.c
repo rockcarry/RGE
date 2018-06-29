@@ -9,9 +9,9 @@
 
 /* 常量定义 */
 /* 默认位图像素位深度 */
-#define DEF_BMP_WIDTH   640
-#define DEF_BMP_HEIGHT  480
-#define DEF_BMP_CDEPTH  16
+#define DEF_BMP_WIDTH   160
+#define DEF_BMP_HEIGHT  100
+#define DEF_BMP_CDEPTH  8
 
 /* 函数实现 */
 /* 创建一个 BMP 对象的函数 */
@@ -314,11 +314,23 @@ DWORD COLOR_CONVERT(int cdepth, DWORD color, BOOL flag)
 int main(void)
 {
     int i, j;
-    BMP mybmp332  = { .cdepth = 8  };
-    BMP mybmp565  = { .cdepth = 16 };
-    BMP mybmp888  = { .cdepth = 24 };
-    BMP mybmp8888 = { .cdepth = 32 };
+    BMP mybmp332  = {0};
+    BMP mybmp565  = {0};
+    BMP mybmp888  = {0};
+    BMP mybmp8888 = {0};
 
+    mybmp332 .width = 100;
+    mybmp332 .height= 100;
+    mybmp565 .width = 100;
+    mybmp565 .height= 100;
+    mybmp888 .width = 100;
+    mybmp888 .height= 100;
+    mybmp8888.width = 100;
+    mybmp8888.height= 100;
+    mybmp332 .cdepth = 8 ;
+    mybmp565 .cdepth = 16;
+    mybmp888 .cdepth = 24;
+    mybmp8888.cdepth = 32;
     createbmp(&mybmp332 );
     createbmp(&mybmp565 );
     createbmp(&mybmp888 );

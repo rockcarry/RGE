@@ -155,27 +155,27 @@ typedef struct {
 
 /* GIF file logic screen descriptor */
 typedef struct {
-    WORD logic_screen_width;
-    WORD logic_screen_height;
-    BYTE global_color_table_size : 3;
-    BYTE sort_flag               : 1;
-    BYTE color_resolution        : 3;
-    BYTE global_color_table_flag : 1;
-    BYTE background_color;
-    BYTE pixel_aspect_ratio;
+    WORD     logic_screen_width;
+    WORD     logic_screen_height;
+    unsigned global_color_table_size : 3;
+    unsigned sort_flag               : 1;
+    unsigned color_resolution        : 3;
+    unsigned global_color_table_flag : 1;
+    BYTE     background_color;
+    BYTE     pixel_aspect_ratio;
 } LOGICSCREENDESC;
 
 /* GIF file image descriptor */
 typedef struct {
-    WORD image_left_position;
-    WORD image_top_position;
-    WORD image_width;
-    WORD image_height;
-    BYTE local_color_table_size : 3;
-    BYTE reserved               : 2;
-    BYTE sort_flag              : 1;
-    BYTE interlace_flag         : 1;
-    BYTE local_color_table_flag : 1;
+    WORD     image_left_position;
+    WORD     image_top_position;
+    WORD     image_width;
+    WORD     image_height;
+    unsigned local_color_table_size : 3;
+    unsigned reserved               : 2;
+    unsigned sort_flag              : 1;
+    unsigned interlace_flag         : 1;
+    unsigned local_color_table_flag : 1;
 } IMAGEDESCRIPTOR;
 
 /* GIF file image data */
@@ -186,12 +186,12 @@ typedef struct {
 
 /* GIF file graphic control extension */
 typedef struct {
-    BYTE transparent_color_flag : 1;
-    BYTE user_input_flag        : 1;
-    BYTE disposal_method        : 3;
-    BYTE reserved               : 3;
-    WORD delay_time;
-    BYTE transparent_color;
+    unsigned transparent_color_flag : 1;
+    unsigned user_input_flag        : 1;
+    unsigned disposal_method        : 3;
+    unsigned reserved               : 3;
+    WORD     delay_time;
+    BYTE     transparent_color;
 } GRAPHCTRLEXT;
 
 /* GIF file text extension */
@@ -743,10 +743,13 @@ void gifsetlocalpal(void *ctxt, int  flag)
 }
 
 #else
-#include "win.h"
+#include <stdlib.h>
+#include <conio.h>
+#include "screen.h"
 #include "gif.h"
 #include "bitblt.h"
 #include "log.h"
+#include "fftask.h"
 
 static void    *g_gdctxt = NULL;
 static void    *g_gectxt = NULL;
@@ -754,58 +757,7 @@ static BMP      g_mybmp  = {0};
 static GIF_CTRL g_ctrl   = {0};
 static GIF_TEXT g_text   = {0};
 
-LRESULT CALLBACK MyWndProc(
-    HWND hwnd,      /* handle to window */
-    UINT uMsg,      /* message identifier */
-    WPARAM wParam,  /* first message parameter */
-    LPARAM lParam   /* second message parameter */
-)
-{
-    int type;
-    int xpos;
-    int ypos;
-
-    switch (uMsg) {
-    case WM_TIMER:
-        while (1) {
-            gifdecodeframe(g_gdctxt, &type , &g_mybmp, &xpos, &ypos, &g_ctrl, &g_text);
-            switch (type) {
-            case GIF_FRAME_TYPE_IMAGE:
-                /*
-                log_printf("GIF_FRAME_TYPE_IMAGE %d, %d\r\n", xpos, ypos);
-                log_printf("\r\n");
-                */
-                putbmp(&SCREEN, xpos, ypos, &g_mybmp, FS_AUTO_LOCK, 0, 0, NULL);
-                break;
-            case GIF_FRAME_TYPE_CTRL:
-                /*
-                log_printf("GIF_FRAME_TYPE_CTRL\r\n");
-                log_printf("g_ctrl.disposal   = %d\r\n", g_ctrl.disposal  );
-                log_printf("g_ctrl.inputflag  = %d\r\n", g_ctrl.inputflag );
-                log_printf("g_ctrl.transflag  = %d\r\n", g_ctrl.transflag );
-                log_printf("g_ctrl.transcolor = %d\r\n", g_ctrl.transcolor);
-                log_printf("g_ctrl.delay      = %d\r\n", g_ctrl.delay     );
-                log_printf("\r\n");
-                */
-                SetTimer(hwnd, 1, g_ctrl.delay, NULL);
-                break;
-            case GIF_FRAME_TYPE_TEXT:
-                /*
-                log_printf("GIF_FRAME_TYPE_TEXT %d, %d\r\n", xpos, ypos);
-                log_printf("\r\n");
-                */
-                break;
-            }
-            if (type == GIF_FRAME_TYPE_CTRL) break;
-        }
-        return 0;
-
-    default:
-        return DEF_SCREEN_WNDPROC(hwnd, uMsg, wParam, lParam);
-    }
-}
-
-int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
+int main(void)
 {
     void *fpdec = NULL;
     void *fpenc = NULL;
@@ -817,13 +769,10 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     int   xpos, ypos;
     int   type;
 
+    ffkernel_init();
     log_init("gif.log");
 
-    if (*lpszCmdLine == 0) {
-        lpszCmdLine = "res/cs.gif";
-    }
-
-    fpdec = DEF_FIO.open(lpszCmdLine , "rb");
+    fpdec = DEF_FIO.open("res/cs.gif", "rb");
     fpenc = DEF_FIO.open("output.gif", "wb");
 
     g_gdctxt = gifdecodeinit(fpdec , &DEF_FIO);
@@ -839,25 +788,30 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
         if (type == GIF_FRAME_TYPE_END) break;
     }
 
-    RGE_WIN_INIT(hInst);
-    SCREEN.width  = 640;
-    SCREEN.height = 480;
-    SCREEN.cdepth = 32;
     createbmp(&SCREEN);
-
-    SetWindowLong(GET_SCREEN_HWND(), GWL_WNDPROC, (long)MyWndProc);
-    SetTimer(GET_SCREEN_HWND(), 1, 100, NULL);
-
-    RGE_MSG_LOOP();
-    KillTimer(GET_SCREEN_HWND(), 1);
+    while (!kbhit()) {
+        gifdecodeframe(g_gdctxt, &type , &g_mybmp, &xpos, &ypos, &g_ctrl, &g_text);
+        switch (type) {
+        case GIF_FRAME_TYPE_IMAGE:
+            putbmp(&SCREEN, xpos, ypos, &g_mybmp, FS_AUTO_LOCK, 0, 0, NULL);
+            break;
+        case GIF_FRAME_TYPE_CTRL:
+            task_sleep(g_ctrl.delay);
+            break;
+        case GIF_FRAME_TYPE_TEXT:
+            break;
+        }
+        if (type == GIF_FRAME_TYPE_END) break;
+    }
     destroybmp(&SCREEN);
 
     gifdecodefree(g_gdctxt);
     gifdecodefree(g_gectxt);
-    DEF_FIO.close(fpdec );
+    DEF_FIO.close(fpdec);
     DEF_FIO.close(fpenc);
 
     log_done();
+    ffkernel_exit();
     return 0;
 }
 #endif

@@ -100,24 +100,20 @@ void bitblt(BMP *dstpb, int dstx, int dsty,
 
 #else
 /* 包含头文件 */
-#include "win.h"
+#include <stdlib.h>
+#include <conio.h>
+#include "screen.h"
 #include "bitblt.h"
-int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
+int main(void)
 {
     BMP mybmp  = {0};
-    DWORD pattern[32] = { 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
-                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
-                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555,
-                          0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555, 0xaaaaaaaa, 0x55555555 };
+    DWORD pattern[32] = { 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L,
+                          0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L,
+                          0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L,
+                          0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L, 0xaaaaaaaaL, 0x55555555L };
 
-    if (*lpszCmdLine == 0) {
-        lpszCmdLine = "res/boy332.bmp";
-    }
-
-    RGE_WIN_INIT(hInst);
-    SCREEN.cdepth = 32;
     createbmp(&SCREEN);
-    loadbmp(&mybmp, lpszCmdLine, NULL);
+    loadbmp(&mybmp, "res/boy332.bmp", NULL);
 
     putbmp(&SCREEN,
            (SCREEN.width  - mybmp.width ) / 2,
@@ -126,7 +122,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
 
     putbmp(&SCREEN, 0, 0, &mybmp, FS_AUTO_LOCK|FS_PATTERN, RGB888(0,255,0), 0, pattern);
 
-    RGE_MSG_LOOP();
+    getch();
     destroybmp(&mybmp);
     destroybmp(&SCREEN);
     return 0;

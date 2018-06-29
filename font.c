@@ -254,29 +254,27 @@ int outtextxy(void *ctxt, char *txt, int x, int y)
 
 #else
 /* 包含头文件 */
-#include "win.h"
+#include <stdlib.h>
+#include <conio.h>
+#include "screen.h"
 #include "font.h"
 #include "draw2d.h"
 
-int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
+int main(void)
 {
     void *ctxt;
-
     loadfont(&FONT16);
-
-    RGE_WIN_INIT(hInst);
-    SCREEN.cdepth = 16;
     createbmp(&SCREEN);
 
     ctxt = draw2d_init(&SCREEN);
     settextfont (ctxt, &FONT16);
-    settextcolor(ctxt, RGB(0, 255, 0));
+    settextcolor(ctxt, RGB888(0, 255, 0));
     paint_begin (ctxt);
     printtext   (ctxt, "Hello RGE! \n\n汉字显示\n");
     paint_done  (ctxt);
     draw2d_free (ctxt);
 
-    RGE_MSG_LOOP();
+    getch();
     destroybmp(&SCREEN);
     freefont(&FONT16);
     return 0;
