@@ -56,12 +56,15 @@ $(LIB) : $(OBJS)
 	$(CC) $(CCFLAGS) -c -o$@ $<
 
 %.exe : %.c %.h $(LIB)
-	$(CC) $(CCFLAGS) -D_TEST_ $< $(LIB)
+	$(CC) $(CCFLAGS) -c -otemp.obj -D_TEST_ $<
+	$(CC) $(CCFLAGS) -e$@ temp.obj $(LIB)
+	rm -f TEMP.OBJ
 
 clean :
 	-rm -f *.OBJ
 	-rm -f *.LIB
-	-rm -f *.EXE
+	-rm -f *.BAK
+	-rm -f *.exe
 	-rm -f *.bmp
 	-rm -f *.pcx
 	-rm -f *.gif
