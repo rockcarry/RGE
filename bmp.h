@@ -25,10 +25,10 @@ typedef struct {
     void (*getpal)(void *pb, int i, int n, BYTE *pal);
 } BMP;
 
-#define RGB332(r, g, b)  ( (((r) >> 5) << 5 ) | (((g) >> 5) << 2) | (((b) >> 6) << 0) )
-#define RGB565(r, g, b)  ( (((r) >> 3) << 11) | (((g) >> 2) << 5) | (((b) >> 3) << 0) )
-#define RGB888(r, g, b)  ( ((r) << 16) | ((g) << 8) | ((b) << 0) )
-#define ARGB(a, r, g, b) ( ((DWORD)(a) << 24) | ((r) << 16) | ((g) << 8) | ((b) << 0) )
+#define RGB332(r, g, b)  ( ((DWORD)((r) & 0xE0) <<  0) | ((DWORD)((g) & 0xE0) >> 3) | ((DWORD)((b) & 0xC0) >> 6) )
+#define RGB565(r, g, b)  ( ((DWORD)((r) & 0xF8) <<  8) | ((DWORD)((g) & 0xFC) << 3) | ((DWORD)((b) & 0xF8) >> 3) )
+#define RGB888(r, g, b)  ( ((DWORD)((r) & 0xFF) << 16) | ((DWORD)((g) & 0xFF) << 8) | ((DWORD)((b) & 0xFF) >> 0) )
+#define ARGB(a, r, g, b) ( ((DWORD)((a) & 0xFF) << 24) | ((DWORD)((r) & 0xFF) << 16) | ((DWORD)((g) & 0xFF) << 8) | ((DWORD)((b) & 0xFF) >> 0) )
 DWORD COLOR_CONVERT(int cdepth, DWORD color, BOOL flag);
 
 /* º¯ÊýÉùÃ÷ */

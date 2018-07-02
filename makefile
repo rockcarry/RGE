@@ -64,7 +64,7 @@ clean :
 	-rm -f *.OBJ
 	-rm -f *.LIB
 	-rm -f *.BAK
-	-rm -f *.exe
+	-rm -f *.EXE
 	-rm -f *.bmp
 	-rm -f *.pcx
 	-rm -f *.gif

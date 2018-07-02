@@ -129,10 +129,7 @@ void settextfont(void *ctxt, FONT *font)
 void settextcolor(void *ctxt, DWORD color)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
-
-    /* invalid ctxt & brush */
-    if (!ctxt) return;
-
+    if (!ctxt) return; /* invalid ctxt & brush */
     pc->textcolor = COLOR_CONVERT(pc->dstbmp->cdepth, color, TRUE);
 }
 
@@ -263,14 +260,14 @@ int outtextxy(void *ctxt, char *txt, int x, int y)
 int main(void)
 {
     void *ctxt;
-    loadfont(&FONT16);
+    loadfont(&FONT12);
     createbmp(&SCREEN);
 
     ctxt = draw2d_init(&SCREEN);
-    settextfont (ctxt, &FONT16);
+    settextfont (ctxt, &FONT12);
     settextcolor(ctxt, RGB888(0, 255, 0));
     paint_begin (ctxt);
-    printtext   (ctxt, "Hello RGE! \n\n∫∫◊÷œ‘ æ\n");
+    printtext   (ctxt, "Hello RGE! \n∫∫◊÷œ‘ æ\n");
     paint_done  (ctxt);
     draw2d_free (ctxt);
 

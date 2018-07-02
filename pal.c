@@ -320,7 +320,7 @@ void main(void)
         rightrotpal(pal);
         setbmppal(&SCREEN, 0, 256, pal);
         unlockbmp(&SCREEN);
-        task_sleep(50);
+        task_delay(100);
     }
 
     getch();

@@ -5,9 +5,6 @@
 #include <dos.h>
 #include "fftask.h"
 
-/* 预编译开关 */
-#define FOR_REAL_DOS  0
-
 /* 该宏用于消除变量未使用的警告 */
 #define DO_USE_VAR(var)  do { var = var; } while (0)
 
@@ -248,12 +245,8 @@ static int far idle_task_proc(void far *p)
     DO_USE_VAR(p);
     while (1) {
         /* 释放处理器资源 */
-#if FOR_REAL_DOS
-        asm hlt;
-#else
         asm mov ax, 0x1680;
         asm int 0x2f;
-#endif
     }
     /* return 0; */
 }
@@ -479,6 +472,16 @@ int task_sleep(int ms)
     /* 进行任务切换 */
     switch_task();
     return 0;
+}
+
+int task_delay(int ms)
+{
+    long tick = g_tick_counter + (ms + 9) / 10;
+    while (g_tick_counter < tick) {
+        /* 释放处理器资源 */
+        asm mov ax, 0x1680;
+        asm int 0x2f;
+    }
 }
 
 int task_wait(void *ctask, int timeout)

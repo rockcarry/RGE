@@ -291,7 +291,7 @@ void main(void)
     putbmp(&SCREEN,
            (SCREEN.width  - mybmp.width ) / 2,
            (SCREEN.height - mybmp.height) / 2,
-           &mybmp, FS_AUTO_LOCK, 0, 0, NULL);
+           &mybmp, FS_AUTO_LOCK|FS_256_COPYDATA|FS_256_COPYPAL, 0, 0, NULL);
     encodepcx(&mypcx2, &SCREEN);
 
     getch();

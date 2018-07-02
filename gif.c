@@ -796,7 +796,7 @@ int main(void)
             putbmp(&SCREEN, xpos, ypos, &g_mybmp, FS_AUTO_LOCK, 0, 0, NULL);
             break;
         case GIF_FRAME_TYPE_CTRL:
-            task_sleep(g_ctrl.delay);
+            task_delay(g_ctrl.delay);
             break;
         case GIF_FRAME_TYPE_TEXT:
             break;
