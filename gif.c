@@ -13,119 +13,91 @@ typedef struct {
     int     bitflag;
     void   *basefp;
     FIO    *basefio;
-    int     gifmode;
     int     counter;
-} GIF_FIO_CONTEXT;
-
-static void* _gif_fio_open(const char *url, const char *mode)
-{
-    GIF_FIO_CONTEXT *context = NULL;
-    context = malloc(sizeof(GIF_FIO_CONTEXT));
-    if (!context) return NULL;
-
-    memset(context, 0, sizeof(GIF_FIO_CONTEXT));
-    context->basefp  = (void*)url;
-    context->basefio = (FIO *)mode;
-    return context;
-}
-
-static int _gif_fio_close(void *fp)
-{
-    if (fp) {
-        free(fp);
-        return 0;
-    }
-    else return EOF;
-}
+} GIFFIOCTXT;
 
 static int _gif_fio_getc(void *fp)
 {
-    GIF_FIO_CONTEXT *context = (GIF_FIO_CONTEXT*)fp;
-    if (context->gifmode) {
-        if (context->counter == 0) {
-            context->counter = (context->basefio->getc)(context->basefp);
-            if (context->counter == EOF || context->counter == 0) return EOF;
-        }
-        context->counter--;
+    GIFFIOCTXT *context = (GIFFIOCTXT*)fp;
+    if (context->counter == 0) {
+        context->counter = (context->basefio->getc)(context->basefp);
+        if (context->counter == EOF || context->counter == 0) return EOF;
     }
+    context->counter--;
     return (context->basefio->getc)(context->basefp);
 }
 
 static int _gif_fio_putc(int c, void *fp)
 {
-    GIF_FIO_CONTEXT *context = (GIF_FIO_CONTEXT*)fp;
-    if (context->gifmode) {
-        if (context->counter == 0) {
-            if (EOF == (context->basefio->putc)(255, context->basefp)) return EOF;
-        }
-        if (++context->counter == 255) context->counter = 0;
+    GIFFIOCTXT *context = (GIFFIOCTXT*)fp;
+    if (context->counter == 0) {
+        if (EOF == (context->basefio->putc)(255, context->basefp)) return EOF;
     }
+    if (++context->counter == 255) context->counter = 0;
     return (context->basefio->putc)(c, context->basefp);
-}
-
-static size_t _gif_fio_read(void *buf, size_t size, size_t count, void *fp)
-{
-    GIF_FIO_CONTEXT *context = (GIF_FIO_CONTEXT*)fp;
-    return (context->basefio->read)(buf, size, count, context->basefp);
-}
-
-static size_t _gif_fio_write(const void *buf, size_t size, size_t count, void *fp)
-{
-    GIF_FIO_CONTEXT *context = (GIF_FIO_CONTEXT*)fp;
-    return (context->basefio->write)(buf, size, count, context->basefp);
-}
-
-static long _gif_fio_tell(void *fp)
-{
-    GIF_FIO_CONTEXT *context = (GIF_FIO_CONTEXT*)fp;
-    return (context->basefio->tell)(context->basefp);
-}
-
-static int _gif_fio_seek(void *fp, long offset, int org)
-{
-    GIF_FIO_CONTEXT *context = (GIF_FIO_CONTEXT*)fp;
-    return (context->basefio->seek)(context->basefp, offset, org);
-}
-
-static int _gif_fio_eof(void *fp)
-{
-    GIF_FIO_CONTEXT *context = (GIF_FIO_CONTEXT*)fp;
-    return (context->basefio->eof)(context->basefp);
 }
 
 static int _gif_fio_flush(void *fp)
 {
-    GIF_FIO_CONTEXT *context = (GIF_FIO_CONTEXT*)fp;
-    if (context->gifmode) {
-        if (context->counter != 0) {
-            if (EOF == (context->basefio->seek)(context->basefp, -context->counter-1, SEEK_CUR)) return EOF;
-            if (EOF == (context->basefio->putc)(context->counter, context->basefp)) return EOF;
-            if (EOF == (context->basefio->seek)(context->basefp,  context->counter,   SEEK_CUR)) return EOF;
-        }
-        if (EOF == (context->basefio->putc)(0, context->basefp)) return EOF;
+    GIFFIOCTXT *context = (GIFFIOCTXT*)fp;
+    if (context->counter != 0) {
+        if (EOF == (context->basefio->seek)(context->basefp, -context->counter-1, SEEK_CUR)) return EOF;
+        if (EOF == (context->basefio->putc)(context->counter, context->basefp)) return EOF;
+        if (EOF == (context->basefio->seek)(context->basefp,  context->counter,   SEEK_CUR)) return EOF;
     }
+    if (EOF == (context->basefio->putc)(0, context->basefp)) return EOF;
     return (context->basefio->flush)(context->basefp);
 }
 
-static FIO GIF_FIO =
-{
-    _gif_fio_open,
-    _gif_fio_close,
-    _gif_fio_getc,
-    _gif_fio_putc,
-    _gif_fio_read,
-    _gif_fio_write,
-    _gif_fio_tell,
-    _gif_fio_seek,
-    _gif_fio_eof,
-    _gif_fio_flush,
-};
+static void gif_fio_init(GIFFIOCTXT *ctxt, FIO *fio, void *basefp, FIO *basefio) {
+    ctxt->bitbuf  = 0;
+    ctxt->bitflag = 0;
+    ctxt->basefp  = basefp;
+    ctxt->basefio = basefio;
+    ctxt->counter = 0;
+    memcpy(fio, basefio, sizeof(FIO));
+    fio->getc  = _gif_fio_getc;
+    fio->putc  = _gif_fio_putc;
+    fio->flush = _gif_fio_flush;
+}
 
-static void giffio_setgifmode(void *fp, BOOL mode)
+static void gif_lzw_decode(LZWCODEC *lzw, int codesize, BYTE *buf, unsigned bufsize, void *fp, FIO *fio)
 {
-    GIF_FIO_CONTEXT *context = (GIF_FIO_CONTEXT*)fp;
-    context->gifmode = mode;
-    context->counter = 0;
+    void      *memfp;
+    GIFFIOCTXT giffp;
+    FIO        gifio;
+
+    memfp = MEM_FIO.open((const char*)buf, (const char*)bufsize);
+    gif_fio_init(&giffp, &gifio, fp, fio);
+
+    lzw->LZW_ROOT_SIZE     = codesize;
+    lzw->LZW_CODE_SIZE_OUT = 8;
+    lzw->LZW_CODE_SIZE_MIN = codesize + 1;
+    lzw->LZW_ROOT_NUM   =  1 << codesize;
+    lzw->LZW_CLEAR_CODE =  1 << codesize;
+    lzw->LZW_END_CODE   = (1 << codesize) + 1;
+    lzwdecode(lzw, memfp, &MEM_FIO, &giffp, &gifio);
+    MEM_FIO.close(memfp);
+}
+
+static void gif_lzw_encode(LZWCODEC *lzw, int codesize, void *fp, FIO *fio, BYTE *buf, unsigned bufsize)
+{
+    void      *memfp;
+    GIFFIOCTXT giffp;
+    FIO        gifio;
+
+    memfp = MEM_FIO.open((const char*)buf, (const char*)bufsize);
+    gif_fio_init(&giffp, &gifio, fp, fio);
+
+    lzw->LZW_ROOT_SIZE     = codesize;
+    lzw->LZW_CODE_SIZE_OUT = 8;
+    lzw->LZW_CODE_SIZE_MIN = codesize + 1;
+    lzw->LZW_ROOT_NUM   =  1 << codesize;
+    lzw->LZW_CLEAR_CODE =  1 << codesize;
+    lzw->LZW_END_CODE   = (1 << codesize) + 1;
+    lzwencode(lzw, &giffp, &gifio, memfp, &MEM_FIO);
+    gifio.flush(&giffp);
+    MEM_FIO.close(memfp);
 }
 /* -- gif fio context & driver -- */
 
@@ -239,6 +211,7 @@ typedef struct {
     int          gpalsize;       /* GIF 动画的全局调色板 */
     int          locpalflag;     /* 当前帧是否使用局部调色板 */
     void        *fp;             /* fp */
+    FIO         *fio;            /* fio */
     LZWCODEC     lzwcodec;       /* LZW 编解码器 */
     long         dataoffset;     /* GIF 动画数据偏移地址 */
 } GIFCONTEXT;
@@ -292,19 +265,15 @@ void* gifdecodeinit(void *fp, FIO *fio)
     BYTE            palbuf[256*3];
     int             i;
 
-    context = malloc(sizeof(GIFCONTEXT));
+    context = calloc(1, sizeof(GIFCONTEXT));
     if (!context) {
         failed = TRUE;
         goto done;
     }
-    else memset(context, 0, sizeof(GIFCONTEXT));
 
-    /* init fp of context */
-    context->fp = GIF_FIO.open((const char*)fp, (const char*)fio);
-    if (!context->fp) {
-        failed = TRUE;
-        goto done;
-    }
+    /* init fp and fio */
+    context->fp  = fp;
+    context->fio = fio;
 
     /* init lzw codec */
     context->lzwcodec.LZW_CODE_SIZE_MAX = 12;
@@ -314,7 +283,7 @@ void* gifdecodeinit(void *fp, FIO *fio)
     }
 
     /* read gif header */
-    GIF_FIO.read(&gifheader, sizeof(gifheader), 1, context->fp);
+    fio->read(&gifheader, sizeof(gifheader), 1, context->fp);
 
     /* check if it is valid gif file */
     if (  gifheader.signature[0] != 'G'
@@ -327,7 +296,7 @@ void* gifdecodeinit(void *fp, FIO *fio)
     }
 
     /* read gif logic screen descriptor */
-    GIF_FIO.read(&logscrdesc, sizeof(logscrdesc), 1, context->fp);
+    fio->read(&logscrdesc, sizeof(logscrdesc), 1, context->fp);
 
     /* init gif object */
     context->width   = logscrdesc.logic_screen_width;
@@ -337,7 +306,7 @@ void* gifdecodeinit(void *fp, FIO *fio)
     /* load global color table */
     if (logscrdesc.global_color_table_flag == 1) {
         context->gpalsize = 1 << (logscrdesc.global_color_table_size + 1);
-        GIF_FIO.read(palbuf, context->gpalsize * 3, 1, context->fp);
+        fio->read(palbuf, context->gpalsize * 3, 1, context->fp);
         for (i=0; i<context->gpalsize; i++) {
             context->gpaldata[i * 4 + 2] = palbuf[i * 3 + 0];
             context->gpaldata[i * 4 + 1] = palbuf[i * 3 + 1];
@@ -346,7 +315,7 @@ void* gifdecodeinit(void *fp, FIO *fio)
     }
 
     /* save the image data offset */
-    context->dataoffset = GIF_FIO.tell(context->fp);
+    context->dataoffset = fio->tell(context->fp);
 
 done:
     if (failed) {
@@ -360,13 +329,12 @@ done:
 void gifdecodefree(void *ctxt)
 {
     GIFCONTEXT *context = (GIFCONTEXT*)ctxt;
-
     if (context) {
         /* close lzw codec */
         closelzwcodec(&(context->lzwcodec));
 
         /* free fp fo context */
-        GIF_FIO.close(context->fp);
+        context->fio->close(context->fp);
 
         free(context);
     }
@@ -375,6 +343,7 @@ void gifdecodefree(void *ctxt)
 BOOL gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CTRL *ctrl, GIF_TEXT *text)
 {
     GIFCONTEXT     *context = (GIFCONTEXT*)ctxt;
+    FIO            *fio     = context->fio;
     BYTE            curbyte;
     int             palsize;
     BYTE            codesize;
@@ -383,18 +352,17 @@ BOOL gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CT
     PLAINTEXTEXT    gtextext  = {0};
     BYTE            pallocal [256*4];
     BYTE            palbuffer[256*3];
-    void           *memctxt;
     int             i;
 
     *type   = GIF_FRAME_TYPE_UNKNOWN;
-    curbyte = (GIF_FIO.getc)(context->fp);
+    curbyte = (fio->getc)(context->fp);
     switch (curbyte) {
     case GIF_IMG_SPRT:
         /* set type */
         *type = GIF_FRAME_TYPE_IMAGE;
 
         /* read image descriptor */
-        GIF_FIO.read(&imagedesc, sizeof(IMAGEDESCRIPTOR), 1, context->fp);
+        fio->read(&imagedesc, sizeof(IMAGEDESCRIPTOR), 1, context->fp);
 
         /* get bmp's display position */
         *xpos = imagedesc.image_left_position;
@@ -416,7 +384,7 @@ BOOL gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CT
         context->locpalflag = imagedesc.local_color_table_flag;
         if (imagedesc.local_color_table_flag) {
             palsize = 1 << (imagedesc.local_color_table_size + 1);
-            GIF_FIO.read(palbuffer, palsize * 3, 1, context->fp);
+            fio->read(palbuffer, palsize * 3, 1, context->fp);
             for (i=0; i<palsize; i++) {
                 pallocal[i * 4 + 2] = palbuffer[i * 3 + 0];
                 pallocal[i * 4 + 1] = palbuffer[i * 3 + 1];
@@ -428,34 +396,21 @@ BOOL gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CT
         }
 
         /* get image's lzw min code size */
-        codesize = (GIF_FIO.getc)(context->fp);
-
-        /* do lzw decode for gif */
-        context->lzwcodec.LZW_ROOT_SIZE     = codesize;
-        context->lzwcodec.LZW_CODE_SIZE_OUT = 8;
-        context->lzwcodec.LZW_CODE_SIZE_MIN = codesize + 1;
-        context->lzwcodec.LZW_ROOT_NUM   =  1 << codesize;
-        context->lzwcodec.LZW_CLEAR_CODE =  1 << codesize;
-        context->lzwcodec.LZW_END_CODE   = (1 << codesize) + 1;
-        memctxt = MEM_FIO.open((const char*)pb->pdata, (const char*)(pb->stride * pb->height));
-        giffio_setgifmode(context->fp, TRUE);
-        alignbyte(context->fp, &GIF_FIO);
-        lzwdecode(&context->lzwcodec, memctxt, &MEM_FIO, context->fp, &GIF_FIO);
-        giffio_setgifmode(context->fp, FALSE);
-        MEM_FIO.close(memctxt);
+        codesize = (fio->getc)(context->fp);
+        gif_lzw_decode(&context->lzwcodec, codesize, pb->pdata, pb->stride * pb->height, context->fp, context->fio);
 
         /* deinterlace gif image */
         if (imagedesc.interlace_flag) gifdeinterlace(pb);
         break;
 
     case GIF_EXT_INTR:
-        curbyte = (GIF_FIO.getc)(context->fp);
+        curbyte = (fio->getc)(context->fp);
         switch (curbyte) {
         case GIF_CTRL_EXT:
             /* load gif control extension */
-            curbyte = (GIF_FIO.getc)(context->fp);
+            curbyte = (fio->getc)(context->fp);
             if (curbyte != sizeof(GRAPHCTRLEXT)) break;
-            GIF_FIO.read(&gctrlext, sizeof(GRAPHCTRLEXT), 1, context->fp);
+            fio->read(&gctrlext, sizeof(GRAPHCTRLEXT), 1, context->fp);
 
             /* fill ctrl block */
             *type  = GIF_FRAME_TYPE_CTRL;
@@ -465,7 +420,7 @@ BOOL gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CT
             ctrl->transcolor = gctrlext.transparent_color;
             ctrl->delay      = gctrlext.delay_time * 10;
 
-            curbyte = (GIF_FIO.getc)(context->fp);
+            curbyte = (fio->getc)(context->fp);
             if (curbyte != 0) {
                 log_printf("parser GIF_CTRL_EXT failed, can't get block terminator !\r\n");
                 break;
@@ -474,10 +429,10 @@ BOOL gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CT
 
         case GIF_TEXT_EXT:
             /* load gif text extension */
-            curbyte = (GIF_FIO.getc)(context->fp);
+            curbyte = (fio->getc)(context->fp);
             if (curbyte != sizeof(PLAINTEXTEXT)) break;
-            GIF_FIO.read(&gtextext, sizeof(PLAINTEXTEXT), 1, context->fp);
-            curbyte = (GIF_FIO.getc)(context->fp);
+            fio->read(&gtextext, sizeof(PLAINTEXTEXT), 1, context->fp);
+            curbyte = (fio->getc)(context->fp);
 
             /* fill text block */
             *type = GIF_FRAME_TYPE_TEXT;
@@ -491,14 +446,14 @@ BOOL gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CT
             text->backcolor = gtextext.text_background_color;
 
             /* ++ we only support 256 bytes text length ++ */
-            curbyte = (GIF_FIO.getc)(context->fp);
+            curbyte = (fio->getc)(context->fp);
             if (curbyte == 0) break;
-            GIF_FIO.read(text->text, curbyte, 1, context->fp);
+            fio->read(text->text, curbyte, 1, context->fp);
 
             for (;;) {
-                curbyte = (GIF_FIO.getc)(context->fp);
+                curbyte = (fio->getc)(context->fp);
                 if (curbyte == 0) break;
-                GIF_FIO.seek(context->fp, curbyte, SEEK_CUR);
+                fio->seek(context->fp, curbyte, SEEK_CUR);
             }
             /* -- we only support 256 bytes text length -- */
             break;
@@ -508,9 +463,9 @@ BOOL gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CT
         case GIF_APP_EXT:
 /*          log_printf("unsupported gif ext_intr !\r\n"); */
             for (;;) {
-                curbyte = (GIF_FIO.getc)(context->fp);
+                curbyte = (fio->getc)(context->fp);
                 if (curbyte == 0) break;
-                GIF_FIO.seek(context->fp, curbyte, SEEK_CUR);
+                fio->seek(context->fp, curbyte, SEEK_CUR);
             }
             break;
         }
@@ -518,7 +473,7 @@ BOOL gifdecodeframe(void *ctxt, int *type, BMP *pb, int *xpos, int *ypos, GIF_CT
         /* -- not support now -- */
 
     case ';':
-        (GIF_FIO.seek)(context->fp, context->dataoffset, SEEK_SET);
+        fio->seek(context->fp, context->dataoffset, SEEK_SET);
         *type = GIF_FRAME_TYPE_END; /* type */
         break;
     }
@@ -537,19 +492,15 @@ void* gifencodeinit(void *fp, FIO *fio, int width, int height, BYTE bkcolor, BYT
     BYTE            palbuf[256*3];
     int             i;
 
-    context = malloc(sizeof(GIFCONTEXT));
+    context = calloc(1, sizeof(GIFCONTEXT));
     if (!context) {
         failed = TRUE;
         goto done;
     }
-    else memset(context, 0, sizeof(GIFCONTEXT));
 
-    /* init fp of context */
-    context->fp = GIF_FIO.open((const char*)fp, (const char*)fio);
-    if (!context->fp) {
-        failed = TRUE;
-        goto done;
-    }
+    /* init fp and fio */
+    context->fp  = fp;
+    context->fio = fio;
 
     /* init lzw codec */
     context->lzwcodec.LZW_CODE_SIZE_MAX = 12;
@@ -578,7 +529,7 @@ void* gifencodeinit(void *fp, FIO *fio, int width, int height, BYTE bkcolor, BYT
     gifheader.version[2]   = 'a';
 
     /* write gif header */
-    GIF_FIO.write(&gifheader, sizeof(gifheader), 1, context->fp);
+    fio->write(&gifheader, sizeof(gifheader), 1, context->fp);
 
     /* fill gif logic screen desc */
     logscrdesc.logic_screen_width  = context->width;
@@ -593,7 +544,7 @@ void* gifencodeinit(void *fp, FIO *fio, int width, int height, BYTE bkcolor, BYT
     }
 
     /* write gif logic screen descriptor */
-    GIF_FIO.write(&logscrdesc, sizeof(logscrdesc), 1, context->fp);
+    fio->write(&logscrdesc, sizeof(logscrdesc), 1, context->fp);
 
     /* if there is global palette write it to file */
     if (context->gpalsize > 0) {
@@ -602,7 +553,7 @@ void* gifencodeinit(void *fp, FIO *fio, int width, int height, BYTE bkcolor, BYT
             palbuf[i * 3 + 1] = context->gpaldata[i * 4 + 1];
             palbuf[i * 3 + 2] = context->gpaldata[i * 4 + 0];
         }
-        GIF_FIO.write(palbuf, 256 * 3, 1, context->fp);
+        fio->write(palbuf, 256 * 3, 1, context->fp);
     }
 
 done:
@@ -617,13 +568,12 @@ done:
 void gifencodefree(void *ctxt)
 {
     GIFCONTEXT *context = (GIFCONTEXT*)ctxt;
-
     if (context) {
         /* close lzw codec */
         closelzwcodec(&(context->lzwcodec));
 
         /* free fp fo context */
-        GIF_FIO.close(context->fp);
+        context->fio->close(context->fp);
 
         free(context);
     }
@@ -632,17 +582,17 @@ void gifencodefree(void *ctxt)
 BOOL gifencodeframe(void *ctxt, int type, BMP *pb, int xpos, int ypos, GIF_CTRL *ctrl, GIF_TEXT *text)
 {
     GIFCONTEXT     *context    = (GIFCONTEXT*)ctxt;
+    FIO            *fio        = context->fio;
     GRAPHCTRLEXT    gifctrlext = {0};
     IMAGEDESCRIPTOR imagedesc  = {0};
     BYTE            palbuf[256*3];
     int             codesize   = 8;
-    void           *memctxt;
     int             i;
 
     switch (type) {
     case GIF_FRAME_TYPE_IMAGE:
         /* first write Image Separator to file */
-        (GIF_FIO.putc)(GIF_IMG_SPRT, context->fp);
+        (fio->putc)(GIF_IMG_SPRT, context->fp);
 
         /* fill imagedesc and write it to file */
         imagedesc.image_left_position = xpos;
@@ -653,7 +603,7 @@ BOOL gifencodeframe(void *ctxt, int type, BMP *pb, int xpos, int ypos, GIF_CTRL 
             imagedesc.local_color_table_flag = 1;
             imagedesc.local_color_table_size = 7;
         }
-        (GIF_FIO.write)(&imagedesc, sizeof(imagedesc), 1, context->fp);
+        fio->write(&imagedesc, sizeof(imagedesc), 1, context->fp);
 
         /* if there is local palette write it to file */
         if (context->locpalflag) {
@@ -662,33 +612,21 @@ BOOL gifencodeframe(void *ctxt, int type, BMP *pb, int xpos, int ypos, GIF_CTRL 
                 palbuf[i * 3 + 1] = pb->ppal[i * 4 + 1];
                 palbuf[i * 3 + 2] = pb->ppal[i * 4 + 0];
             }
-            GIF_FIO.write(palbuf, 256 * 3, 1, context->fp);
+            fio->write(palbuf, 256 * 3, 1, context->fp);
         }
 
         /* write lzw minimum code size to file */
-        (GIF_FIO.putc)(8, context->fp);
-
-        /* do lzw encode for gif */
-        context->lzwcodec.LZW_ROOT_SIZE     = codesize;
-        context->lzwcodec.LZW_CODE_SIZE_MIN = codesize + 1;
-        context->lzwcodec.LZW_ROOT_NUM      = (1 << codesize);
-        context->lzwcodec.LZW_CLEAR_CODE    = (1 << codesize);
-        context->lzwcodec.LZW_END_CODE      = (1 << codesize) + 1;
-        memctxt = MEM_FIO.open((const char*)pb->pdata, (const char*)(pb->stride * pb->height));
-        giffio_setgifmode(context->fp, TRUE);
-        lzwencode(&context->lzwcodec, context->fp, &GIF_FIO, memctxt, &MEM_FIO);
-        (GIF_FIO.flush)(context->fp);
-        giffio_setgifmode(context->fp, FALSE);
-        (MEM_FIO.close)(memctxt);
+        (fio->putc)(8, context->fp);
+        gif_lzw_encode(&context->lzwcodec, codesize, context->fp, context->fio, pb->pdata, pb->stride * pb->height);
         break;
 
     case GIF_FRAME_TYPE_CTRL:
         /* write the Extension Introducer and Graphic Control Label to file */
-        (GIF_FIO.putc)(GIF_EXT_INTR, context->fp);
-        (GIF_FIO.putc)(GIF_CTRL_EXT, context->fp);
+        (fio->putc)(GIF_EXT_INTR, context->fp);
+        (fio->putc)(GIF_CTRL_EXT, context->fp);
 
         /* write block size to file */
-        (GIF_FIO.putc)(sizeof(gifctrlext), context->fp);
+        (fio->putc)(sizeof(gifctrlext), context->fp);
 
         /* fill gifctrlext and write it to file */
         gifctrlext.disposal_method        = ctrl->disposal;
@@ -696,15 +634,15 @@ BOOL gifencodeframe(void *ctxt, int type, BMP *pb, int xpos, int ypos, GIF_CTRL 
         gifctrlext.transparent_color_flag = ctrl->transflag;
         gifctrlext.transparent_color      = ctrl->transcolor;
         gifctrlext.delay_time             = ctrl->delay / 10;
-        (GIF_FIO.write)(&gifctrlext, sizeof(gifctrlext), 1, context->fp);
+        fio->write(&gifctrlext, sizeof(gifctrlext), 1, context->fp);
 
         /* write block terminator to file */
-        (GIF_FIO.putc)(0, context->fp);
+        (fio->putc)(0, context->fp);
         break;
 
     case GIF_FRAME_TYPE_END:
         /* write the gif file Trailer */
-        (GIF_FIO.putc)(';', context->fp);
+        (fio->putc)(';', context->fp);
         break;
 
     case GIF_FRAME_TYPE_TEXT:
