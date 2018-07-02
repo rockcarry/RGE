@@ -25,7 +25,7 @@ OBJS = \
     bitblt.o \
     draw2d.o \
     drawctxt.o \
-    palutils.o
+    utils.o
 
 
 # 所有的可执行目标
@@ -39,7 +39,7 @@ EXES = \
     font.exe \
     bitblt.exe \
     draw2d.exe \
-    palutils.exe
+    utils.exe
 
 # 输出的库文件
 DLL = rge.dll

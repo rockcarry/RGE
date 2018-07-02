@@ -3,7 +3,7 @@
 /* 包含头文件 */
 #include <stdlib.h>
 #include "pal.h"
-#include "palutils.h"
+#include "utils.h"
 
 /* 函数实现 */
 void palutils_bitmap_palmap(BYTE *palmap, BYTE *dstpal, BYTE *srcpal)
@@ -173,7 +173,7 @@ void palutils_matchpal(BMP *pb1, BMP *pb2)
 #include "draw2d.h"
 #include "bitblt.h"
 #include "font.h"
-#include "palutils.h"
+#include "utils.h"
 
 static BMP mybmp1 = {0};
 static BMP mybmp2 = {0};
