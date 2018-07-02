@@ -1,5 +1,5 @@
-#ifndef __RGE_PALUTILS_H__
-#define __RGE_PALUTILS_H__
+#ifndef __RGE_UTILS_H__
+#define __RGE_UTILS_H__
 
 #include "bmp.h"
 

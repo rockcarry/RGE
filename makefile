@@ -24,7 +24,7 @@ OBJS = \
     bitblt.obj \
     draw2d.obj \
     drawctxt.obj \
-    palutils.obj \
+    utils.obj \
     fftask.obj \
     wavdev.obj
 
@@ -38,7 +38,7 @@ EXES = \
     font.exe \
     bitblt.exe \
     draw2d.exe \
-    palutils.exe
+    utils.exe
 
 # 输出的库文件
 LIB = rge.lib
