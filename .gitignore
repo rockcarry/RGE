@@ -1,6 +1,7 @@
 !.gitignore
 *.o
 *.dll
-*.OBJ
 *.exe
-
+*.OBJ
+*.LIB
+*.BAK
