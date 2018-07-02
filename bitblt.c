@@ -100,7 +100,7 @@ void bitblt(BMP *dstpb, int dstx, int dsty,
 
 #else
 /* 包含头文件 */
-#include "win.h"
+#include "screen.h"
 #include "bitblt.h"
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
 {

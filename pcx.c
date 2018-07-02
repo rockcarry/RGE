@@ -271,7 +271,7 @@ BOOL decodepcx(PCX *pcx, BMP *pb)
 }
 
 #else
-#include "win.h"
+#include "screen.h"
 #include "pcx.h"
 #include "bitblt.h"
 

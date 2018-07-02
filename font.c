@@ -254,7 +254,7 @@ int outtextxy(void *ctxt, char *txt, int x, int y)
 
 #else
 /* 包含头文件 */
-#include "win.h"
+#include "screen.h"
 #include "font.h"
 #include "draw2d.h"
 

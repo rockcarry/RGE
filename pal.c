@@ -295,7 +295,7 @@ BYTE PALRGB(BYTE *pal, BYTE r, BYTE g, BYTE b)
 
 #else
 #include "pal.h"
-#include "win.h"
+#include "screen.h"
 
 LRESULT CALLBACK MyWndProc(
     HWND hwnd,      /* handle to window */

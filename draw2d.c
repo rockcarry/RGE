@@ -853,7 +853,7 @@ error_handler:
 
 #else
 /* 包含头文件 */
-#include "win.h"
+#include "screen.h"
 #include "draw2d.h"
 
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)

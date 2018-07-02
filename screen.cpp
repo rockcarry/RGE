@@ -2,7 +2,7 @@
 
 /* 包含头文件 */
 extern "C" {
-#include "win.h"
+#include "screen.h"
 }
 
 /* 全局变量 */
@@ -23,13 +23,14 @@ void RGE_MSG_LOOP(void)
     }
 }
 
-HINSTANCE RGE_GET_APP_INSTANCE(void)
+HINSTANCE GET_APP_INSTANCE(void)
 {
     return RGE_APP_INSTANCE;
 }
 
+#ifdef USE_GDI_SCREEN
 /*
-  WINSCREEN 实现
+  GDISCREEN 实现
  */
 
 /* 常量定义 */
@@ -57,10 +58,10 @@ static BMP_EXTRA_WIN WINSCREEN_EXTRA =
 {
     NULL,
     WS_SYSMENU,
-    DEF_WINSCREEN_WNDPROC,
+    DEF_SCREEN_WNDPROC,
 };
 
-BMP WINSCREEN =
+BMP SCREEN =
 {
     0, 0, 0, 0, {0, 0, 0, 0}, NULL, NULL,
     &WINSCREEN_EXTRA,
@@ -186,13 +187,13 @@ static void _windrv_getpal(void *pb, int i, int n, BYTE *pal)
 }
 
 /* 函数实现 */
-HWND GET_WINSCREEN_HWND(void)
+HWND GET_SCREEN_HWND(void)
 {
-    BMP_EXTRA_WIN *pextra = (BMP_EXTRA_WIN*)WINSCREEN.pextra;
+    BMP_EXTRA_WIN *pextra = (BMP_EXTRA_WIN*)SCREEN.pextra;
     return pextra->hwnd;
 }
 
-LRESULT CALLBACK DEF_WINSCREEN_WNDPROC(
+LRESULT CALLBACK DEF_SCREEN_WNDPROC(
     HWND hwnd,      /* handle to window */
     UINT uMsg,      /* message identifier */
     WPARAM wParam,  /* first message parameter */
@@ -210,7 +211,7 @@ LRESULT CALLBACK DEF_WINSCREEN_WNDPROC(
             ps.rcPaint.top,
             ps.rcPaint.right  - ps.rcPaint.left,
             ps.rcPaint.bottom - ps.rcPaint.top,
-            ((BMP_EXTRA_WIN*)WINSCREEN.pextra)->hdc,
+            ((BMP_EXTRA_WIN*)SCREEN.pextra)->hdc,
             ps.rcPaint.left,
             ps.rcPaint.top,
             SRCCOPY);
@@ -225,8 +226,9 @@ LRESULT CALLBACK DEF_WINSCREEN_WNDPROC(
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
 }
+#endif
 
-#ifdef ENABLE_WIN32_DDRAW
+#ifdef USE_DDRAW_SCREEN
 /*
   DDRAWSCREEN 实现
  */
@@ -257,7 +259,7 @@ static BMP_EXTRA_DDRAW DDRAWSCREEN_EXTRA =
     DEF_DDRAWSCREEN_WNDPROC,
 };
 
-BMP DDRAWSCREEN =
+BMP SCREEN =
 {
     0, 0, 0, 0, {0, 0, 0, 0}, NULL, NULL,
     &DDRAWSCREEN_EXTRA,
@@ -396,7 +398,7 @@ static void _ddrawdrv_getpal(void *pb, int i, int n, BYTE *pal)
     }
 }
 
-LRESULT CALLBACK DEF_DDRAWSCREEN_WNDPROC(
+LRESULT CALLBACK DEF_SCREEN_WNDPROC(
     HWND hwnd,      /* handle to window */
     UINT uMsg,      /* message identifier */
     WPARAM wParam,  /* first message parameter */
@@ -419,7 +421,7 @@ LRESULT CALLBACK DEF_DDRAWSCREEN_WNDPROC(
     }
 }
 
-HWND GET_DDRAWSCREEN_HWND(void)
+HWND GET_SCREEN_HWND(void)
 {
     BMP_EXTRA_WIN *pextra = (BMP_EXTRA_WIN*)DDRAWSCREEN.pextra;
     return pextra->hwnd;
@@ -429,8 +431,9 @@ HWND GET_DDRAWSCREEN_HWND(void)
 #else
 /* 包含头文件 */
 extern "C" {
-#include "win.h"
+#include "screen.h"
 }
+
 int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int nCmdShow)
 {
     int  i, j;

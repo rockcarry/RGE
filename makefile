@@ -15,7 +15,7 @@ OBJS = \
     pcx.o \
     lzw.o \
     gif.o \
-    win.o \
+    screen.o \
     pixel.o \
     slbasic.o \
     slcvert.o \
@@ -35,7 +35,7 @@ EXES = \
     pcx.exe \
     lzw.exe \
     gif.exe \
-    win.exe \
+    screen.exe \
     font.exe \
     bitblt.exe \
     draw2d.exe \

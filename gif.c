@@ -743,7 +743,7 @@ void gifsetlocalpal(void *ctxt, int  flag)
 }
 
 #else
-#include "win.h"
+#include "screen.h"
 #include "gif.h"
 #include "bitblt.h"
 #include "log.h"

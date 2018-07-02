@@ -169,7 +169,7 @@ void palutils_matchpal(BMP *pb1, BMP *pb2)
 
 #else
 /* 在这里书写测试程序 */
-#include "win.h"
+#include "screen.h"
 #include "draw2d.h"
 #include "bitblt.h"
 #include "font.h"
