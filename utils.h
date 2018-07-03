@@ -20,9 +20,6 @@ void palutils_bitmap_palmap(BYTE *palmap, BYTE *dstpal, BYTE *srcpal);
  */
 void palutils_alpha_palmap(BYTE *palmap, BYTE *pal, DWORD color);
 
-/* 调色板匹配，用于匹配两个 256 位图的调色板，使之能够同屏显示 */
-void palutils_matchpal(BMP *pb1, BMP *pb2);
-
 #endif
 
 
