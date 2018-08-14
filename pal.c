@@ -275,6 +275,8 @@ BYTE PALRGB(BYTE *pal, BYTE r, BYTE g, BYTE b)
     BYTE color;
     int  i;
 
+    if (!pal) return 0;
+
     color = 0;
     mind  = abs(pal[0] - b) + abs(pal[1] - g) + abs(pal[2] - r);
     pal  += 4;
