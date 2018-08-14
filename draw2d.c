@@ -166,7 +166,13 @@ void putpixel(void *ctxt, int x, int y, DWORD c)
     DRAWCONTEXT *pc     = (DRAWCONTEXT*)ctxt;
     PFNPIXEL     pixel  = pc->pixel;
     BMP         *dstbmp = pc->dstbmp;
-    pixel(dstbmp, x, y, c);
+    if (  x >= dstbmp->clipper.left
+       && x <= dstbmp->clipper.right
+       && y >= dstbmp->clipper.top
+       && y <= dstbmp->clipper.bottom)
+    {
+        pixel(dstbmp, x, y, c);
+    }
 }
 
 DWORD getpixel(void *ctxt, int x, int y)
@@ -174,6 +180,13 @@ DWORD getpixel(void *ctxt, int x, int y)
     DRAWCONTEXT *pc     = (DRAWCONTEXT*)ctxt;
     BMP         *dstbmp = pc->dstbmp;
     BYTE        r, g, b;
+
+    if (  x < 0 || x >= dstbmp->width
+       || y < 0 || y >= dstbmp->height)
+    {
+        return 0;
+    }
+
     switch (dstbmp->cdepth) {
     case 8:
         return ((BYTE*)(dstbmp->pdata + y * dstbmp->stride))[x];
@@ -191,16 +204,24 @@ DWORD getpixel(void *ctxt, int x, int y)
     }
 }
 
-static __inline void scanline(DRAWCONTEXT *ctxt, int y, int x1, int x2)
+static void scanline(DRAWCONTEXT *ctxt, int y, int x1, int x2)
 {
     BMP  *dstpb = ctxt->dstbmp;
     BMP  *srcpb = ctxt->fillparams.srcbmp;
-    int   dstx  = x1;
-    int   dsty  = y ;
-    void *dstp  = (BYTE*)dstpb->pdata + dsty * dstpb->stride + dstx * (dstpb->cdepth / 8);
-    int   srcx;
-    int   srcy;
-    void *srcp  = NULL;
+    int   dstx, dsty;
+    int   srcx, srcy;
+    void *dstp;
+    void *srcp;
+
+    if (y > dstpb->clipper.bottom || y < dstpb->clipper.top) return;
+    if (x1 < dstpb->clipper.left ) x1 = dstpb->clipper.left ;
+    if (x1 > dstpb->clipper.right) x1 = dstpb->clipper.right;
+    if (x2 > dstpb->clipper.right) x2 = dstpb->clipper.right;
+    dstx = x1;
+    dsty = y;
+    dstp = (BYTE*)dstpb->pdata + dsty * dstpb->stride + dstx * (dstpb->cdepth / 8);
+    srcp = NULL;
+
     if (srcpb) {
         srcx = (x1 + ctxt->fillparams.fillsrcx) % srcpb->width;
         srcy = (y  + ctxt->fillparams.fillsrcy) % srcpb->height;
@@ -215,10 +236,8 @@ static __inline void scanline(DRAWCONTEXT *ctxt, int y, int x1, int x2)
 
 void line(void *ctxt, int x1, int y1, int x2, int y2)
 {
-    DRAWCONTEXT *pc     = (DRAWCONTEXT*)ctxt;
-    PFNPIXEL     pixel  = pc->pixel;
-    BMP         *dstbmp = pc->dstbmp;
-    DWORD        dc     = pc->drawcolor;
+    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
+    DWORD        dc = pc->drawcolor;
     int x, y, dx, dy, e;
 
     /* 绘制图形 */
@@ -239,7 +258,7 @@ void line(void *ctxt, int x1, int y1, int x2, int y2)
         y = y1;
         x = x1;
         while (x <= x2) {
-            pixel(dstbmp, x, y, dc);
+            putpixel(ctxt, x, y, dc);
 
             e += dy * 2;
             if (e >= 0) {
@@ -262,7 +281,7 @@ void line(void *ctxt, int x1, int y1, int x2, int y2)
         y = y1;
         x = x1;
         while (y <= y2) {
-            pixel(dstbmp, x, y, dc);
+            putpixel(ctxt, x, y, dc);
 
             e += dx * 2;
             if (e > 0) {
@@ -306,10 +325,8 @@ void rectangle(void *ctxt, int x1, int y1, int x2, int y2)
 
 void roundrect(void *ctxt, int x1, int y1, int x2, int y2, int a, int b)
 {
-    DRAWCONTEXT *pc     = (DRAWCONTEXT*)ctxt;
-    PFNPIXEL     pixel  = pc->pixel;
-    BMP         *dstbmp = pc->dstbmp;
-    DWORD        dc     = pc->drawcolor;
+    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
+    DWORD        dc = pc->drawcolor;
     int  x, y, t;
     long aa, bb, d;
     BOOL flag = FALSE;
@@ -407,14 +424,14 @@ void roundrect(void *ctxt, int x1, int y1, int x2, int y2, int a, int b)
         y = b;
         d = 4 * bb + aa * (-b * 4 + 1);
         while (4 * bb * (x + 1) < aa * (4 * y - 2)) {
-            if (!flag) pixel(dstbmp, x2 + x, y2 + y, dc);
-            else       pixel(dstbmp, x2 + y, y2 + x, dc);
-            if (!flag) pixel(dstbmp, x2 + x, y1 - y, dc);
-            else       pixel(dstbmp, x2 + y, y1 - x, dc);
-            if (!flag) pixel(dstbmp, x1 - x, y2 + y, dc);
-            else       pixel(dstbmp, x1 - y, y2 + x, dc);
-            if (!flag) pixel(dstbmp, x1 - x, y1 - y, dc);
-            else       pixel(dstbmp, x1 - y, y1 - x, dc);
+            if (!flag) putpixel(ctxt, x2 + x, y2 + y, dc);
+            else       putpixel(ctxt, x2 + y, y2 + x, dc);
+            if (!flag) putpixel(ctxt, x2 + x, y1 - y, dc);
+            else       putpixel(ctxt, x2 + y, y1 - x, dc);
+            if (!flag) putpixel(ctxt, x1 - x, y2 + y, dc);
+            else       putpixel(ctxt, x1 - y, y2 + x, dc);
+            if (!flag) putpixel(ctxt, x1 - x, y1 - y, dc);
+            else       putpixel(ctxt, x1 - y, y1 - x, dc);
             if (d < 0) {
                 d += 4 * bb * (2 * x + 3);
                 x++;
@@ -429,14 +446,14 @@ void roundrect(void *ctxt, int x1, int y1, int x2, int y2, int a, int b)
         x = a;
         d = 4 * aa + bb * (-a * 4 + 1);
         while (4 * bb * (x + 1) > aa * (4 * y - 2)) {
-            if (!flag) pixel(dstbmp, x2 + x, y2 + y, dc);
-            else       pixel(dstbmp, x2 + y, y2 + x, dc);
-            if (!flag) pixel(dstbmp, x2 + x, y1 - y, dc);
-            else       pixel(dstbmp, x2 + y, y1 - x, dc);
-            if (!flag) pixel(dstbmp, x1 - x, y2 + y, dc);
-            else       pixel(dstbmp, x1 - y, y2 + x, dc);
-            if (!flag) pixel(dstbmp, x1 - x, y1 - y, dc);
-            else       pixel(dstbmp, x1 - y, y1 - x, dc);
+            if (!flag) putpixel(ctxt, x2 + x, y2 + y, dc);
+            else       putpixel(ctxt, x2 + y, y2 + x, dc);
+            if (!flag) putpixel(ctxt, x2 + x, y1 - y, dc);
+            else       putpixel(ctxt, x2 + y, y1 - x, dc);
+            if (!flag) putpixel(ctxt, x1 - x, y2 + y, dc);
+            else       putpixel(ctxt, x1 - y, y2 + x, dc);
+            if (!flag) putpixel(ctxt, x1 - x, y1 - y, dc);
+            else       putpixel(ctxt, x1 - y, y1 - x, dc);
             if (d < 0) {
                 d += 4 * aa * (2 * y + 3);
                 y++;
@@ -452,10 +469,8 @@ void roundrect(void *ctxt, int x1, int y1, int x2, int y2, int a, int b)
 
 void circle(void *ctxt, int xo, int yo, int r)
 {
-    DRAWCONTEXT *pc     = (DRAWCONTEXT*)ctxt;
-    PFNPIXEL     pixel  = pc->pixel;
-    BMP         *dstbmp = pc->dstbmp;
-    DWORD        dc     = pc->drawcolor;
+    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
+    DWORD        dc = pc->drawcolor;
     int x, y, dx, dy, d;
 
     /* 绘制图形 */
@@ -491,14 +506,14 @@ void circle(void *ctxt, int xo, int yo, int r)
         }
     } else {
         while (x <= y) {
-            pixel(dstbmp, xo+x, yo+y, dc);
-            pixel(dstbmp, xo-x, yo+y, dc);
-            pixel(dstbmp, xo+x, yo-y, dc);
-            pixel(dstbmp, xo-x, yo-y, dc);
-            pixel(dstbmp, xo+y, yo+x, dc);
-            pixel(dstbmp, xo-y, yo+x, dc);
-            pixel(dstbmp, xo+y, yo-x, dc);
-            pixel(dstbmp, xo-y, yo-x, dc);
+            putpixel(ctxt, xo+x, yo+y, dc);
+            putpixel(ctxt, xo-x, yo+y, dc);
+            putpixel(ctxt, xo+x, yo-y, dc);
+            putpixel(ctxt, xo-x, yo-y, dc);
+            putpixel(ctxt, xo+y, yo+x, dc);
+            putpixel(ctxt, xo-y, yo+x, dc);
+            putpixel(ctxt, xo+y, yo-x, dc);
+            putpixel(ctxt, xo-y, yo-x, dc);
 
             if (d < 0) {
                 d  += dx;
