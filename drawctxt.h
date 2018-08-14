@@ -12,7 +12,6 @@
 typedef struct {
     BMP  *dstbmp;      /* dest drawing bmp */
 
-    int   antialias;   /* anti alias */
     int   drawalpha;   /* alpha value */
     DWORD drawcolor;   /* draw color */
     DWORD drawflags;   /* draw flags */

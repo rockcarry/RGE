@@ -32,7 +32,6 @@ void  paint_done (void *ctxt);
 void setdrawalpha  (void *ctxt, int    alpha  );
 void setdrawcolor  (void *ctxt, DWORD  color  );
 void setdrawflags  (void *ctxt, DWORD  flags  );
-void setantialias  (void *ctxt, int    antia  );
 void setlinestyle  (void *ctxt, DWORD  style  );
 void setlinewidth  (void *ctxt, int    width  );
 void setfillstyle  (void *ctxt, int    style  );

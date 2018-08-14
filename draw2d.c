@@ -92,12 +92,6 @@ void setdrawflags(void *ctxt, DWORD flags)
     pc->drawflags = flags;
 }
 
-void setantialias(void *ctxt, int antia)
-{
-    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
-    pc->antialias = antia;
-}
-
 void setlinestyle(void *ctxt, DWORD style)
 {
     DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
