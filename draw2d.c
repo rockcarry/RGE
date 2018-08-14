@@ -878,7 +878,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPreInst, LPSTR lpszCmdLine, int n
     RGE_WIN_INIT(hInst);
     SCREEN.cdepth = 32;
     createbmp(&SCREEN);
-    loadbmp(&me, "res\\boy8888.bmp", NULL);
+    loadbmp(&me, "res/boy8888.bmp", NULL);
 
     context = draw2d_init(&SCREEN);
     paint_begin(context);
