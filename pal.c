@@ -278,11 +278,11 @@ BYTE PALRGB(BYTE *pal, BYTE r, BYTE g, BYTE b)
     if (!pal) return 0;
 
     color = 0;
-    mind  = (pal[0] - b) * (pal[0] - b) + (pal[1] - g) * (pal[1] - g) + (pal[2] - r) * (pal[2] - r);
+    mind  = abs(pal[0] - b) + abs(pal[1] - g) + abs(pal[2] - r);
     pal  += 4;
 
     for (i=1; i<256; i++) {
-        newd = (pal[0] - b) * (pal[0] - b) + (pal[1] - g) * (pal[1] - g) + (pal[2] - r) * (pal[2] - r);
+        newd = abs(pal[0] - b) + abs(pal[1] - g) + abs(pal[2] - r);
         if (newd < mind) {
             mind  = newd;
             color = i;
