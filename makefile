@@ -3,6 +3,7 @@
 
 # 编译器定义
 CC      = gcc
+AR      = ar
 STRIP   = strip
 CCFLAGS = -mwindows -Wall
 
@@ -42,10 +43,14 @@ EXES = \
     utils.exe
 
 # 输出的库文件
+LIB = rge.a
 DLL = rge.dll
 
 # 编译规则
-all : $(DLL) $(EXES)
+all : $(LIB) $(DLL) $(EXES)
+
+$(LIB) : $(OBJS)
+	$(AR) -rv $@ $(OBJS)
 
 $(DLL) : $(OBJS)
 	$(CC) $(CCFLAGS) -o $@ $(OBJS) --share -lddraw
