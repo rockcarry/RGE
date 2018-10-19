@@ -8,7 +8,7 @@
 /* 预定义字体 */
 FONT FONT12 = {12, 12,  6, 12, "font/hzk1212.dat", "font/asc0612.dat"};
 FONT FONT16 = {16, 16,  8, 14, "font/hzk1616.dat", "font/asc0814.dat"};
-FONT FONT24 = {24, 24, 12, 21, "font/hzk2424.dat", "font/asc1221.dat"};
+FONT FONT24 = {24, 24, 12, 22, "font/hzk2424.dat", "font/asc1222.dat"};
 
 /* 内部函数实现 */
 /* draw raster font */
@@ -33,10 +33,10 @@ static void draw_raster_font(void *ctxt, int x, int y, BYTE *data, int w, int h)
         for (i=0; i<w/8; i++,data++) {
             for (j=7; j>=0; j--,x++) {
                 if (*data & (1 << j)) {
-                    if (  x + j >= pc->dstbmp->clipper.left
-                       && x + j <= pc->dstbmp->clipper.right
-                       && y + i >= pc->dstbmp->clipper.top
-                       && y + i <= pc->dstbmp->clipper.bottom)
+                    if (  x >= pc->dstbmp->clipper.left
+                       && x <= pc->dstbmp->clipper.right
+                       && y >= pc->dstbmp->clipper.top
+                       && y <= pc->dstbmp->clipper.bottom)
                     {
                         pixel(pc->dstbmp, x, y, color);
                     }
@@ -47,8 +47,9 @@ static void draw_raster_font(void *ctxt, int x, int y, BYTE *data, int w, int h)
 }
 
 /* 输出一个汉字的函数 */
-static void draw_hz(DRAWCONTEXT *pc, char hz[2], int x, int y)
+void draw_hz(void *ctxt, char hz[2], int x, int y)
 {
+    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
     FONT *pf = (FONT*)pc->textfont;
     int  ch0 = (BYTE)hz[0] - 0xA0;
     int  ch1 = (BYTE)hz[1] - 0xA0;
@@ -60,8 +61,9 @@ static void draw_hz(DRAWCONTEXT *pc, char hz[2], int x, int y)
 }
 
 /* 输出一个英文字符的函数 */
-static void draw_asc(DRAWCONTEXT *pc, char asc, int x, int y)
+void draw_asc(void *ctxt, char asc, int x, int y)
 {
+    DRAWCONTEXT *pc = (DRAWCONTEXT*)ctxt;
     FONT *pf     = (FONT*)pc->textfont;
     long  offset = (long)asc * pf->_asc_buf_size;
 

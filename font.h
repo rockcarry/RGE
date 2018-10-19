@@ -51,6 +51,8 @@ void resettextbox(void *ctxt, TEXTBOX *ptb);
 int  printtextbox(void *ctxt, TEXTBOX *ptb, int *steps);
 
 /* 文本输出函数 */
+void draw_asc(void *ctxt, char asc  , int x, int y);
+void draw_hz (void *ctxt, char hz[2], int x, int y);
 int  printtext(void *ctxt, char *txt);
 int  outtextxy(void *ctxt, char *txt, int x, int y);
 
